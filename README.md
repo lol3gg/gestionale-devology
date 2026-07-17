@@ -47,6 +47,12 @@ Applicazione [Next.js 14](https://nextjs.org) (App Router, TypeScript, Tailwind 
 
 ## Deploy su Vercel
 
+**Stato attuale:** il progetto è collegato al repository GitHub [`lol3gg/gestionale-devology`](https://github.com/lol3gg/gestionale-devology) e al progetto Vercel `devology-system/gestionale-devology`. Ogni `git push` sul branch `main` avvia automaticamente un nuovo deploy in produzione, raggiungibile su:
+
+**https://gestionale-devology.vercel.app**
+
+Non è quindi necessario alcun comando manuale per pubblicare una modifica: basta `git push`. Le sezioni seguenti restano come riferimento per un nuovo collegamento da zero (es. altro repository o altro account Vercel).
+
 ### Variabili d'ambiente da configurare su Vercel
 
 Nel progetto Vercel, vai su **Settings → Environment Variables** e aggiungi (per gli ambienti *Production*, *Preview* e *Development*):
