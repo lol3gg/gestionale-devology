@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { NotebookPen, Save, Check } from "lucide-react";
 import { updateNoteInterne } from "../actions";
 
 type NoteInterneFormProps = {
@@ -29,8 +30,12 @@ export function NoteInterneForm({ richiestaId, noteIniziali }: NoteInterneFormPr
   }
 
   return (
-    <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-      <h2 className="text-base font-semibold text-gray-900">Note interne</h2>
+    <section className="rounded-brand-lg border border-brand-border bg-brand-elevated p-6 shadow-brand-md">
+      <h2 className="flex items-center gap-2 text-base font-semibold text-brand-text">
+        <NotebookPen className="h-4 w-4 text-brand-accent-light" />
+        Note interne
+      </h2>
+      <p className="mt-1 text-xs text-brand-muted">Visibili solo al team, non al cliente.</p>
       <textarea
         rows={8}
         value={note}
@@ -39,19 +44,24 @@ export function NoteInterneForm({ richiestaId, noteIniziali }: NoteInterneFormPr
           setIsSaved(false);
         }}
         placeholder="Annotazioni visibili solo al team..."
-        className="mt-3 w-full resize-y rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="mt-3 w-full resize-y rounded-xl border border-brand-border-strong bg-brand-surface px-3 py-2.5 text-sm text-brand-text placeholder:text-brand-muted shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-accent"
       />
       <div className="mt-3 flex items-center justify-between gap-3">
         <button
           type="button"
           onClick={handleSave}
           disabled={isSaving}
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-b from-[#e01431] via-brand-accent to-[#b00f26] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
         >
+          <Save className="h-3.5 w-3.5" />
           {isSaving ? "Salvataggio..." : "Salva note"}
         </button>
-        {!isSaving && isSaved && <span className="text-xs text-green-600">Note salvate</span>}
-        {errorMessage && <span className="text-xs text-red-600">{errorMessage}</span>}
+        {!isSaving && isSaved && (
+          <span className="inline-flex items-center gap-1 text-xs text-emerald-400">
+            <Check className="h-3.5 w-3.5" /> Note salvate
+          </span>
+        )}
+        {errorMessage && <span className="text-xs text-brand-accent-light">{errorMessage}</span>}
       </div>
     </section>
   );

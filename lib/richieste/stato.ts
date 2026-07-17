@@ -16,13 +16,31 @@ export const STATO_OPTIONS: { value: StatoRichiesta; label: string }[] = [
 ];
 
 export const STATO_BADGE_CLASSES: Record<StatoRichiesta, string> = {
-  nuovo: "bg-blue-100 text-blue-700 ring-blue-200",
-  in_valutazione: "bg-yellow-100 text-yellow-800 ring-yellow-200",
-  preventivo_inviato: "bg-orange-100 text-orange-700 ring-orange-200",
-  accettato: "bg-green-100 text-green-700 ring-green-200",
-  rifiutato: "bg-red-100 text-red-700 ring-red-200",
-  archiviato: "bg-gray-100 text-gray-700 ring-gray-200",
+  nuovo: "bg-blue-500/15 text-blue-300 ring-blue-500/30",
+  in_valutazione: "bg-amber-500/15 text-amber-300 ring-amber-500/30",
+  preventivo_inviato: "bg-orange-500/15 text-orange-300 ring-orange-500/30",
+  accettato: "bg-emerald-500/15 text-emerald-300 ring-emerald-500/30",
+  rifiutato: "bg-brand-accent/15 text-brand-accent-light ring-brand-accent/30",
+  archiviato: "bg-white/10 text-brand-soft ring-white/15",
 };
+
+/** Colore del pallino indicatore, usato nei badge e nella progress bar di stato. */
+export const STATO_DOT_CLASSES: Record<StatoRichiesta, string> = {
+  nuovo: "bg-blue-400",
+  in_valutazione: "bg-amber-400",
+  preventivo_inviato: "bg-orange-400",
+  accettato: "bg-emerald-400",
+  rifiutato: "bg-brand-accent-light",
+  archiviato: "bg-brand-soft",
+};
+
+/** Ordine "di avanzamento" usato per la progress bar nella pagina di dettaglio. */
+export const STATO_PROGRESS_ORDER: StatoRichiesta[] = [
+  "nuovo",
+  "in_valutazione",
+  "preventivo_inviato",
+  "accettato",
+];
 
 export function getStatoLabel(stato: string) {
   return STATO_OPTIONS.find((option) => option.value === stato)?.label ?? stato;

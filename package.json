@@ -3,14 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --turbo",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
   },
   "dependencies": {
+    "@opentelemetry/api": "1.9.1",
     "@supabase/ssr": "^0.12.3",
     "@supabase/supabase-js": "^2.109.0",
+    "lucide-react": "^1.24.0",
     "next": "14.2.35",
     "react": "^18",
     "react-dom": "^18"

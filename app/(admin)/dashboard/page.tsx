@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
-import { RichiesteTable, type RichiestaListItem } from "./_components/RichiesteTable";
+import { DashboardOverview } from "./_components/DashboardOverview";
+import type { RichiestaListItem } from "./_components/RichiesteTable";
 
 export const dynamic = "force-dynamic";
 
@@ -8,23 +9,32 @@ export default async function DashboardPage() {
 
   const { data: richieste, error } = await supabase
     .from("richieste")
-    .select("id, nome, cognome, tipo_cliente, nome_azienda, budget, tempistiche, stato, created_at")
+    .select(
+      "id, nome, cognome, tipo_cliente, nome_azienda, budget, tempistiche, tipo_progetto, stato, created_at"
+    )
     .order("created_at", { ascending: false });
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Richieste</h1>
-        <p className="mt-1 text-sm text-gray-500">Tutte le richieste ricevute dal form pubblico.</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-brand-accent-light">
+          Pannello Admin
+        </p>
+        <h1 className="mt-1 text-2xl font-extrabold tracking-[-0.02em] text-brand-text sm:text-3xl">
+          Richieste
+        </h1>
+        <p className="mt-1 text-sm text-brand-muted">
+          Tutte le richieste ricevute dal form pubblico, in ordine cronologico.
+        </p>
       </div>
 
       {error && (
-        <div className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+        <div className="rounded-md border border-brand-accent/40 bg-brand-accent/10 p-4 text-sm text-brand-accent-light">
           Errore nel caricamento delle richieste: {error.message}
         </div>
       )}
 
-      <RichiesteTable richieste={(richieste ?? []) as RichiestaListItem[]} />
+      <DashboardOverview richieste={(richieste ?? []) as RichiestaListItem[]} />
     </div>
   );
 }

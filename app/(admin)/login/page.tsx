@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -30,11 +31,23 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-sm">
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-4">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(211,17,43,0.16),transparent_55%)]" />
+
+      <div className="relative w-full max-w-sm">
         <div className="mb-8 text-center">
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900">Accesso Admin</h1>
-          <p className="mt-2 text-sm text-gray-500">
+          <Image
+            src="/logo/devology-logo-full.svg"
+            alt="Devology System"
+            width={200}
+            height={125}
+            priority
+            className="mx-auto h-14 w-auto"
+          />
+          <h1 className="mt-5 text-2xl font-extrabold tracking-[-0.03em] text-brand-text">
+            Accesso Admin
+          </h1>
+          <p className="mt-2 text-sm text-brand-muted">
             Accedi con le tue credenziali per gestire le richieste.
           </p>
         </div>
@@ -42,16 +55,16 @@ export default function LoginPage() {
         <form
           onSubmit={handleSubmit}
           noValidate
-          className="space-y-4 rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
+          className="space-y-4 rounded-brand-lg border border-brand-border bg-brand-elevated p-6 shadow-brand-md"
         >
           {errorMessage && (
-            <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+            <div className="rounded-md border border-brand-accent/40 bg-brand-accent/10 p-3 text-sm text-brand-accent-light">
               {errorMessage}
             </div>
           )}
 
           <div>
-            <label htmlFor="email" className="mb-1 block text-sm font-medium text-gray-700">
+            <label htmlFor="email" className="mb-1 block text-sm font-medium text-brand-soft">
               Email
             </label>
             <input
@@ -62,12 +75,12 @@ export default function LoginPage() {
               required
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-md border border-brand-border-strong bg-brand-surface px-3 py-2 text-sm text-brand-text shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-accent"
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="mb-1 block text-sm font-medium text-gray-700">
+            <label htmlFor="password" className="mb-1 block text-sm font-medium text-brand-soft">
               Password
             </label>
             <input
@@ -78,14 +91,14 @@ export default function LoginPage() {
               required
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-md border border-brand-border-strong bg-brand-surface px-3 py-2 text-sm text-brand-text shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-accent"
             />
           </div>
 
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full rounded-md bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-full bg-gradient-to-b from-[#e01431] via-brand-accent to-[#b00f26] px-4 py-2.5 text-sm font-semibold text-white shadow-brand-md transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isSubmitting ? "Accesso in corso..." : "Accedi"}
           </button>
