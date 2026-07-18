@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { DashboardNav } from "./_components/DashboardNav";
 import { DashboardSidebar } from "./_components/DashboardSidebar";
 import { FullscreenToggle } from "./_components/FullscreenToggle";
+import { ThemeToggle } from "./_components/ThemeToggle";
 import { LinkClienteButton } from "./_components/LinkClienteButton";
 import { LogoutButton } from "./_components/LogoutButton";
 
@@ -29,9 +30,9 @@ export default async function DashboardLayout({ children }: { children: ReactNod
       />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        {/* Su desktop non c'è una topbar dedicata: il pulsante resta fisso in alto a destra
-            (il link cliente è già disponibile nella sidebar, qui basta il fullscreen). */}
-        <div className="fixed right-6 top-6 z-50 hidden lg:block">
+        {/* Su desktop non c'è una topbar dedicata: i pulsanti restano fissi in alto a destra. */}
+        <div className="fixed right-6 top-6 z-50 hidden items-center gap-2 lg:flex">
+          <ThemeToggle />
           <FullscreenToggle />
         </div>
 
@@ -48,6 +49,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
           </span>
           <div className="flex items-center gap-2">
             <LinkClienteButton variant="compact" />
+            <ThemeToggle />
             <FullscreenToggle />
             <LogoutButton />
           </div>

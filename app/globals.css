@@ -2,15 +2,67 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Tema scuro (default) */
 :root {
   --background: #090b10;
   --foreground: #eceff8;
+
+  --brand-bg: 9 11 16;
+  --brand-surface: 15 19 28;
+  --brand-elevated: 18 21 29;
+  --brand-border: 255 255 255;
+  --brand-border-alpha: 0.08;
+  --brand-border-strong-alpha: 0.14;
+  --brand-text: 236 239 248;
+  --brand-soft: 194 200 214;
+  --brand-muted: 152 161 181;
+  --brand-accent: 211 17 43;
+  --brand-accent-dark: 167 13 34;
+  --brand-accent-light: 255 107 126;
+
+  --brand-grid-line: rgba(255, 255, 255, 0.035);
+  --brand-shadow-md: 0 18px 50px rgba(0, 0, 0, 0.35);
+  --brand-shadow-lg: 0 28px 80px rgba(0, 0, 0, 0.45);
+  --brand-shadow-glow: 0 0 0 1px rgba(211, 17, 43, 0.18), 0 20px 45px -12px rgba(211, 17, 43, 0.35);
+  --brand-shadow-inset: inset 0 1px 0 0 rgba(255, 255, 255, 0.04);
+  --scrollbar-thumb: rgba(255, 255, 255, 0.12);
+}
+
+/* Tema chiaro */
+html.light {
+  --background: #f3f4f7;
+  --foreground: #12151d;
+
+  --brand-bg: 243 244 247;
+  --brand-surface: 255 255 255;
+  --brand-elevated: 255 255 255;
+  --brand-border: 15 19 28;
+  --brand-border-alpha: 0.08;
+  --brand-border-strong-alpha: 0.14;
+  --brand-text: 18 21 29;
+  --brand-soft: 58 66 84;
+  --brand-muted: 107 114 133;
+  --brand-accent: 211 17 43;
+  --brand-accent-dark: 167 13 34;
+  --brand-accent-light: 176 20 42;
+
+  --brand-grid-line: rgba(15, 19, 28, 0.06);
+  --brand-shadow-md: 0 12px 40px rgba(15, 19, 28, 0.08);
+  --brand-shadow-lg: 0 20px 60px rgba(15, 19, 28, 0.12);
+  --brand-shadow-glow: 0 0 0 1px rgba(211, 17, 43, 0.16), 0 16px 36px -12px rgba(211, 17, 43, 0.22);
+  --brand-shadow-inset: inset 0 1px 0 0 rgba(15, 19, 28, 0.04);
+  --scrollbar-thumb: rgba(15, 19, 28, 0.18);
 }
 
 /* Evita che la comparsa della scrollbar verticale "stringa" la pagina in orizzontale
    (effetto tipico quando sezioni condizionali fanno crescere l'altezza del form). */
 html {
   scrollbar-gutter: stable;
+  color-scheme: dark;
+}
+
+html.light {
+  color-scheme: light;
 }
 
 body {
@@ -24,7 +76,7 @@ body {
   color: #ffffff;
 }
 
-/* Scrollbar scura e sottile, in stile con il resto del pannello. */
+/* Scrollbar sottile, adattata al tema. */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
@@ -35,7 +87,7 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.12);
+  background-color: var(--scrollbar-thumb);
   border-radius: 999px;
   border: 2px solid transparent;
   background-clip: padding-box;

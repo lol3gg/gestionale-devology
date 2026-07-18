@@ -12,17 +12,17 @@ const config: Config = {
         background: "var(--background)",
         foreground: "var(--foreground)",
         brand: {
-          bg: "#090b10",
-          surface: "#0f131c",
-          elevated: "#12151d",
-          border: "rgba(255, 255, 255, 0.08)",
-          "border-strong": "rgba(255, 255, 255, 0.14)",
-          text: "#eceff8",
-          soft: "#c2c8d6",
-          muted: "#98a1b5",
-          accent: "#d3112b",
-          "accent-dark": "#a70d22",
-          "accent-light": "#ff6b7e",
+          bg: "rgb(var(--brand-bg) / <alpha-value>)",
+          surface: "rgb(var(--brand-surface) / <alpha-value>)",
+          elevated: "rgb(var(--brand-elevated) / <alpha-value>)",
+          border: "rgb(var(--brand-border) / var(--brand-border-alpha))",
+          "border-strong": "rgb(var(--brand-border) / var(--brand-border-strong-alpha))",
+          text: "rgb(var(--brand-text) / <alpha-value>)",
+          soft: "rgb(var(--brand-soft) / <alpha-value>)",
+          muted: "rgb(var(--brand-muted) / <alpha-value>)",
+          accent: "rgb(var(--brand-accent) / <alpha-value>)",
+          "accent-dark": "rgb(var(--brand-accent-dark) / <alpha-value>)",
+          "accent-light": "rgb(var(--brand-accent-light) / <alpha-value>)",
         },
       },
       fontFamily: {
@@ -33,14 +33,14 @@ const config: Config = {
         "brand-lg": "22px",
       },
       boxShadow: {
-        "brand-md": "0 18px 50px rgba(0, 0, 0, 0.35)",
-        "brand-lg": "0 28px 80px rgba(0, 0, 0, 0.45)",
-        "brand-glow": "0 0 0 1px rgba(211,17,43,0.18), 0 20px 45px -12px rgba(211,17,43,0.35)",
-        "brand-inset": "inset 0 1px 0 0 rgba(255,255,255,0.04)",
+        "brand-md": "var(--brand-shadow-md)",
+        "brand-lg": "var(--brand-shadow-lg)",
+        "brand-glow": "var(--brand-shadow-glow)",
+        "brand-inset": "var(--brand-shadow-inset)",
       },
       backgroundImage: {
         "brand-grid":
-          "linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px)",
+          "linear-gradient(var(--brand-grid-line) 1px, transparent 1px), linear-gradient(90deg, var(--brand-grid-line) 1px, transparent 1px)",
       },
       keyframes: {
         "pulse-dot": {
