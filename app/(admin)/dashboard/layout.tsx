@@ -5,6 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { DashboardNav } from "./_components/DashboardNav";
 import { FullscreenToggle } from "./_components/FullscreenToggle";
+import { LinkClienteButton } from "./_components/LinkClienteButton";
 import { LogoutButton } from "./_components/LogoutButton";
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
@@ -38,6 +39,8 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         <DashboardNav nuoveCount={nuoveCount ?? 0} />
 
         <div className="space-y-3 border-t border-brand-border p-4">
+          <LinkClienteButton />
+
           <Link
             href="/"
             className="flex items-center gap-1.5 px-2 text-xs font-medium text-brand-muted transition hover:text-brand-accent-light"
@@ -56,7 +59,8 @@ export default async function DashboardLayout({ children }: { children: ReactNod
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        {/* Su desktop non c'è una topbar dedicata: il pulsante resta fisso in alto a destra. */}
+        {/* Su desktop non c'è una topbar dedicata: il pulsante resta fisso in alto a destra
+            (il link cliente è già disponibile nella sidebar, qui basta il fullscreen). */}
         <div className="fixed right-6 top-6 z-50 hidden lg:block">
           <FullscreenToggle />
         </div>
@@ -73,6 +77,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
             Pannello Admin
           </span>
           <div className="flex items-center gap-2">
+            <LinkClienteButton variant="compact" />
             <FullscreenToggle />
             <LogoutButton />
           </div>

@@ -2,9 +2,9 @@
 
 Applicazione [Next.js 14](https://nextjs.org) (App Router, TypeScript, Tailwind CSS) integrata con [Supabase](https://supabase.com) per la gestione delle richieste clienti.
 
-- `app/(public)/richiedi` — form pubblico per l'invio di nuove richieste (con upload allegati).
+- `app/(public)/richiedi` — form pubblico per l'invio di nuove richieste (con upload allegati). È il link da mandare ai clienti (es. `https://gestionale-devology.vercel.app/richiedi`).
 - `app/(admin)/login` — login amministratore (Supabase Auth).
-- `app/(admin)/dashboard` — pannello privato per consultare e gestire le richieste ricevute.
+- `app/(admin)/dashboard` — pannello privato per consultare e gestire le richieste ricevute. Dalla sidebar (o dall'header su mobile) c'è un bottone **"Copia link per il cliente"** che copia in automatico l'URL di `/richiedi` sul dominio corrente: non serve ricordarlo o tenerlo in un progetto separato.
 
 ## Requisiti
 
