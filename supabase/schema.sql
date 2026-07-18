@@ -142,7 +142,12 @@ create table preventivi (
   id uuid primary key default gen_random_uuid(),
   created_at timestamp with time zone default now(),
   richiesta_id uuid references richieste(id) on delete cascade,
-  numero_preventivo text not null,
+  -- Cliente diretto (sezione Preventivi): usati quando richiesta_id è null.
+  nome text,
+  cognome text,
+  azienda text,
+  -- Può essere generato automaticamente se non indicato dall'admin.
+  numero_preventivo text,
   data_invio date not null,
   nome_file text not null,
   url_file text not null
