@@ -89,6 +89,12 @@ using (true);
 create policy "Solo autenticati aggiornano richieste"
 on richieste for update
 to authenticated
+using (true)
+with check (true);
+
+create policy "Solo autenticati eliminano richieste"
+on richieste for delete
+to authenticated
 using (true);
 
 -- Bucket di storage privato per gli allegati caricati dal form pubblico.
@@ -112,6 +118,11 @@ using (bucket_id = 'allegati-clienti');
 -- dalla dashboard (necessaria per la pagina dettaglio richiesta).
 create policy "Autenticati leggono allegati-clienti per signed url"
 on storage.objects for select
+to authenticated
+using (bucket_id = 'allegati-clienti');
+
+create policy "Autenticati eliminano allegati-clienti"
+on storage.objects for delete
 to authenticated
 using (bucket_id = 'allegati-clienti');
 

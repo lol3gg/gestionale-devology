@@ -1,9 +1,15 @@
 "use client";
 
-import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import { useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
 import Image from "next/image";
-import { HelpCircle } from "lucide-react";
+import { CheckCircle2, HelpCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import {
+  SAAS_SPIEGAZIONE,
+  SPECIFICHE_TECNICHE_OPTIONS,
+  TIPO_PROGETTO_OPTIONS,
+} from "@/lib/richieste/progetto";
+import { formatDataItaliana } from "@/lib/richieste/format";
 
 /**
  * Schema Supabase di riferimento (vedi supabase/schema.sql):
@@ -46,67 +52,6 @@ const INITIAL_FORM_STATE: FormState = {
   comeConosciuto: "",
 };
 
-const TIPO_PROGETTO_OPTIONS = [
-  "App mobile",
-  "Web App",
-  "SaaS",
-  "Gestionale",
-  "Automazione con AI",
-  "Altro",
-] as const;
-
-/** Specifiche tecniche selezionabili (checkbox multiple, opzionali) per ciascun tipo di progetto. */
-const SPECIFICHE_TECNICHE_OPTIONS: Record<string, string[]> = {
-  "App mobile": [
-    "iOS",
-    "Android",
-    "Multipiattaforma (iOS + Android)",
-    "Pagamenti in-app",
-    "Notifiche push",
-    "Sistema di login/account utente",
-    "Multiutente (più persone usano lo stesso account/dati condivisi)",
-    "Integrazione con servizi esterni (es. Google, social login, API di terzi)",
-  ],
-  "Web App": [
-    "Sistema di login/account utente",
-    "Multiutente con permessi diversi",
-    "Pagamenti online",
-    "Area riservata privata",
-    "Integrazione con servizi esterni/API",
-    "Dashboard con statistiche/report",
-  ],
-  SaaS: [
-    "Abbonamenti/pagamenti ricorrenti",
-    "Multi-tenant (più aziende/clienti separati usano lo stesso sistema con dati isolati tra loro)",
-    "Pannello di amministrazione",
-    "Livelli di accesso/ruoli utente differenti",
-    "Integrazione con servizi esterni/API",
-  ],
-  Gestionale: [
-    "Gestione magazzino/inventario",
-    "Gestione clienti (CRM)",
-    "Fatturazione/documenti",
-    "Multiutente con permessi differenti",
-    "Reportistica e statistiche",
-  ],
-  "Automazione con AI": [
-    "Automazione di processi interni ripetitivi",
-    "Chatbot/assistente virtuale",
-    "Analisi automatica di dati",
-    "Integrazione con altri software già in uso (es. CRM, email, gestionali)",
-  ],
-  Altro: [],
-};
-
-const SAAS_SPIEGAZIONE =
-  "Un SaaS (Software as a Service) è un software accessibile online in abbonamento, spesso usato da più aziende o utenti diversi contemporaneamente (es. Netflix per il software: paghi un abbonamento e usi il servizio da browser, senza installare nulla).";
-
-/** Converte una data ISO ("2026-08-20", da input type="date") in formato leggibile "20/08/2026". */
-function formatDataItaliana(isoDate: string) {
-  const [anno, mese, giorno] = isoDate.split("-");
-  return `${giorno}/${mese}/${anno}`;
-}
-
 const MAX_FILES = 5;
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
 const ACCEPTED_MIME_TYPES = [
@@ -120,8 +65,11 @@ const ACCEPTED_EXTENSIONS = [".pdf", ".png", ".jpg", ".jpeg", ".docx"];
 // storage), quindi non può essere rigenerato in seguito: usiamo una scadenza lunga.
 const SIGNED_URL_EXPIRY_SECONDS = 60 * 60 * 24 * 365 * 10; // 10 anni
 
+/** Larghezza fissa del contenitore: non deve mai cambiare durante la compilazione. */
+const FORM_SHELL = "mx-auto w-full max-w-3xl min-w-0";
+
 const INPUT_BASE =
-  "w-full rounded-md border bg-brand-surface px-3 py-2 text-sm text-brand-text shadow-sm placeholder:text-brand-muted focus:outline-none focus:ring-2 focus:ring-brand-accent";
+  "w-full min-w-0 rounded-md border bg-brand-surface px-3 py-2 text-sm text-brand-text shadow-sm placeholder:text-brand-muted focus:outline-none focus:ring-2 focus:ring-brand-accent";
 
 function formatFileSize(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
@@ -132,6 +80,63 @@ function formatFileSize(bytes: number) {
 function isAcceptedFile(file: File) {
   const extension = `.${file.name.split(".").pop()?.toLowerCase() ?? ""}`;
   return ACCEPTED_MIME_TYPES.includes(file.type) || ACCEPTED_EXTENSIONS.includes(extension);
+}
+
+/** Messaggio di errore con altezza riservata: evita salti quando appare/scompare. */
+function FieldError({ message }: { message?: string }) {
+  return (
+    <p
+      className={`mt-1 min-h-[1.125rem] text-xs text-brand-accent-light ${
+        message ? "visible" : "invisible"
+      }`}
+      aria-live="polite"
+    >
+      {message || "\u00a0"}
+    </p>
+  );
+}
+
+/** Sezione che si espande/contrare verticalmente senza cambiare la larghezza del layout. */
+function Collapsible({ open, children }: { open: boolean; children: ReactNode }) {
+  return (
+    <div
+      className={`grid transition-[grid-template-rows,opacity] duration-300 ease-in-out ${
+        open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+      }`}
+    >
+      <div className="min-w-0 overflow-hidden">{children}</div>
+    </div>
+  );
+}
+
+function ConfermaInvio() {
+  return (
+    <div className={`${FORM_SHELL} px-1`}>
+      <div className="rounded-brand-lg border border-brand-border bg-brand-elevated px-6 py-12 text-center shadow-brand-md sm:px-10 sm:py-16">
+        <Image
+          src="/logo/devology-logo-full.svg"
+          alt="Devology System"
+          width={200}
+          height={125}
+          priority
+          className="mx-auto h-16 w-auto"
+        />
+
+        <div className="mx-auto mt-10 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/15 ring-1 ring-inset ring-emerald-500/35">
+          <CheckCircle2 className="h-9 w-9 text-emerald-400" strokeWidth={1.75} aria-hidden />
+        </div>
+
+        <h1 className="mt-6 text-2xl font-extrabold tracking-[-0.03em] text-brand-text sm:text-3xl">
+          Richiesta inviata con successo
+        </h1>
+        <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-brand-muted sm:text-base">
+          Grazie per averci raccontato il tuo progetto. Il team di Devology System esaminerà la tua
+          richiesta e ti ricontatterà il prima possibile all&apos;indirizzo email che ci hai
+          fornito.
+        </p>
+      </div>
+    </div>
+  );
 }
 
 export default function RichiediPage() {
@@ -337,8 +342,8 @@ export default function RichiediPage() {
         }
       }
 
-      setStatus("success");
       resetForm();
+      setStatus("success");
     } catch (error) {
       setStatus("error");
       setSubmitError(error instanceof Error ? error.message : "Si è verificato un errore imprevisto.");
@@ -346,12 +351,25 @@ export default function RichiediPage() {
   }
 
   const isSubmitting = status === "submitting";
+  const showSpecifiche =
+    !!formData.tipoProgetto && (SPECIFICHE_TECNICHE_OPTIONS[formData.tipoProgetto]?.length ?? 0) > 0;
+
+  if (status === "success") {
+    return (
+      <main className="relative min-h-screen overflow-x-hidden px-4 py-10 sm:py-16">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_-10%,rgba(211,17,43,0.14),transparent_55%)]" />
+        <div className="relative">
+          <ConfermaInvio />
+        </div>
+      </main>
+    );
+  }
 
   return (
-    <main className="relative min-h-screen overflow-hidden px-4 py-10 sm:py-16">
+    <main className="relative min-h-screen overflow-x-hidden px-4 py-10 sm:py-16">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_-10%,rgba(211,17,43,0.14),transparent_55%)]" />
 
-      <div className="relative mx-auto max-w-3xl">
+      <div className={`relative ${FORM_SHELL}`}>
         <div className="mb-8 text-center">
           <Image
             src="/logo/devology-logo-full.svg"
@@ -369,12 +387,6 @@ export default function RichiediPage() {
           </p>
         </div>
 
-        {status === "success" && (
-          <div className="mb-6 rounded-md border border-emerald-800/50 bg-emerald-950/40 p-4 text-sm text-emerald-300">
-            Richiesta inviata con successo
-          </div>
-        )}
-
         {status === "error" && submitError && (
           <div className="mb-6 rounded-md border border-brand-accent/40 bg-brand-accent/10 p-4 text-sm text-brand-accent-light">
             {submitError}
@@ -384,14 +396,14 @@ export default function RichiediPage() {
         <form
           onSubmit={handleSubmit}
           noValidate
-          className="space-y-8 rounded-brand-lg border border-brand-border bg-brand-elevated p-6 shadow-brand-md sm:p-8"
+          className="w-full min-w-0 space-y-8 rounded-brand-lg border border-brand-border bg-brand-elevated p-6 shadow-brand-md sm:p-8"
         >
           {/* Dati personali */}
           <section className="space-y-4">
             <h2 className="text-base font-semibold text-brand-text">Dati personali</h2>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
+              <div className="min-w-0">
                 <label htmlFor="nome" className="mb-1 block text-sm font-medium text-brand-soft">
                   Nome <span className="text-brand-accent-light">*</span>
                 </label>
@@ -406,12 +418,10 @@ export default function RichiediPage() {
                     fieldErrors.nome ? "border-brand-accent" : "border-brand-border-strong"
                   }`}
                 />
-                {fieldErrors.nome && (
-                  <p className="mt-1 text-xs text-brand-accent-light">{fieldErrors.nome}</p>
-                )}
+                <FieldError message={fieldErrors.nome} />
               </div>
 
-              <div>
+              <div className="min-w-0">
                 <label htmlFor="cognome" className="mb-1 block text-sm font-medium text-brand-soft">
                   Cognome <span className="text-brand-accent-light">*</span>
                 </label>
@@ -426,12 +436,10 @@ export default function RichiediPage() {
                     fieldErrors.cognome ? "border-brand-accent" : "border-brand-border-strong"
                   }`}
                 />
-                {fieldErrors.cognome && (
-                  <p className="mt-1 text-xs text-brand-accent-light">{fieldErrors.cognome}</p>
-                )}
+                <FieldError message={fieldErrors.cognome} />
               </div>
 
-              <div>
+              <div className="min-w-0">
                 <label htmlFor="email" className="mb-1 block text-sm font-medium text-brand-soft">
                   Email <span className="text-brand-accent-light">*</span>
                 </label>
@@ -446,12 +454,10 @@ export default function RichiediPage() {
                     fieldErrors.email ? "border-brand-accent" : "border-brand-border-strong"
                   }`}
                 />
-                {fieldErrors.email && (
-                  <p className="mt-1 text-xs text-brand-accent-light">{fieldErrors.email}</p>
-                )}
+                <FieldError message={fieldErrors.email} />
               </div>
 
-              <div>
+              <div className="min-w-0">
                 <label htmlFor="telefono" className="mb-1 block text-sm font-medium text-brand-soft">
                   Telefono
                 </label>
@@ -463,6 +469,7 @@ export default function RichiediPage() {
                   onChange={handleInputChange}
                   className={`${INPUT_BASE} border-brand-border-strong`}
                 />
+                <FieldError />
               </div>
             </div>
           </section>
@@ -496,9 +503,9 @@ export default function RichiediPage() {
               </label>
             </div>
 
-            {tipoCliente === "azienda" && (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div>
+            <Collapsible open={tipoCliente === "azienda"}>
+              <div className="grid grid-cols-1 gap-4 pt-1 sm:grid-cols-2">
+                <div className="min-w-0">
                   <label htmlFor="nomeAzienda" className="mb-1 block text-sm font-medium text-brand-soft">
                     Nome azienda <span className="text-brand-accent-light">*</span>
                   </label>
@@ -506,19 +513,17 @@ export default function RichiediPage() {
                     id="nomeAzienda"
                     name="nomeAzienda"
                     type="text"
-                    required
+                    required={tipoCliente === "azienda"}
                     value={formData.nomeAzienda}
                     onChange={handleInputChange}
                     className={`${INPUT_BASE} ${
                       fieldErrors.nomeAzienda ? "border-brand-accent" : "border-brand-border-strong"
                     }`}
                   />
-                  {fieldErrors.nomeAzienda && (
-                    <p className="mt-1 text-xs text-brand-accent-light">{fieldErrors.nomeAzienda}</p>
-                  )}
+                  <FieldError message={fieldErrors.nomeAzienda} />
                 </div>
 
-                <div>
+                <div className="min-w-0">
                   <label htmlFor="partitaIva" className="mb-1 block text-sm font-medium text-brand-soft">
                     Partita IVA <span className="text-brand-muted">(opzionale)</span>
                   </label>
@@ -530,16 +535,17 @@ export default function RichiediPage() {
                     onChange={handleInputChange}
                     className={`${INPUT_BASE} border-brand-border-strong`}
                   />
+                  <FieldError />
                 </div>
               </div>
-            )}
+            </Collapsible>
           </section>
 
           {/* Progetto */}
           <section className="space-y-4">
             <h2 className="text-base font-semibold text-brand-text">Il tuo progetto</h2>
 
-            <div>
+            <div className="min-w-0">
               <label
                 htmlFor="descrizioneProgetto"
                 className="mb-1 block text-sm font-medium text-brand-soft"
@@ -558,12 +564,10 @@ export default function RichiediPage() {
                   fieldErrors.descrizioneProgetto ? "border-brand-accent" : "border-brand-border-strong"
                 }`}
               />
-              {fieldErrors.descrizioneProgetto && (
-                <p className="mt-1 text-xs text-brand-accent-light">{fieldErrors.descrizioneProgetto}</p>
-              )}
+              <FieldError message={fieldErrors.descrizioneProgetto} />
             </div>
 
-            <div>
+            <div className="min-w-0">
               <label htmlFor="tipoProgetto" className="mb-1 block text-sm font-medium text-brand-soft">
                 Che tipo di progetto vuoi realizzare? <span className="text-brand-accent-light">*</span>
               </label>
@@ -586,65 +590,48 @@ export default function RichiediPage() {
                   </option>
                 ))}
               </select>
-              {fieldErrors.tipoProgetto && (
-                <p className="mt-1 text-xs text-brand-accent-light">{fieldErrors.tipoProgetto}</p>
-              )}
+              <FieldError message={fieldErrors.tipoProgetto} />
 
               <button
                 type="button"
                 onClick={() => setShowSaasInfo((current) => !current)}
-                className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-brand-accent-light transition hover:text-brand-accent"
+                className="mt-0.5 inline-flex items-center gap-1 text-xs font-medium text-brand-accent-light transition hover:text-brand-accent"
               >
                 <HelpCircle className="h-3.5 w-3.5" />
                 Cos&apos;è un SaaS?
               </button>
 
-              <div
-                className={`grid transition-all duration-300 ease-in-out ${
-                  showSaasInfo ? "mt-2 grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
-                }`}
-              >
-                <div className="overflow-hidden">
-                  <p className="rounded-md border border-brand-border bg-brand-surface p-3 text-xs leading-relaxed text-brand-muted">
-                    {SAAS_SPIEGAZIONE}
-                  </p>
-                </div>
-              </div>
+              <Collapsible open={showSaasInfo}>
+                <p className="mt-2 rounded-md border border-brand-border bg-brand-surface p-3 text-xs leading-relaxed text-brand-muted">
+                  {SAAS_SPIEGAZIONE}
+                </p>
+              </Collapsible>
 
-              {/* Specifiche tecniche: condizionali in base al tipo di progetto, opzionali. */}
-              <div
-                className={`grid transition-all duration-300 ease-in-out ${
-                  formData.tipoProgetto && SPECIFICHE_TECNICHE_OPTIONS[formData.tipoProgetto]?.length > 0
-                    ? "mt-4 grid-rows-[1fr] opacity-100"
-                    : "grid-rows-[0fr] opacity-0"
-                }`}
-              >
-                <div className="overflow-hidden">
-                  <div className="rounded-xl border border-brand-border bg-brand-surface p-4">
-                    <p className="text-sm font-medium text-brand-soft">Specifiche tecniche (opzionale)</p>
-                    <p className="mt-0.5 text-xs text-brand-muted">
-                      Seleziona tutte le funzionalità che ti interessano per questo progetto.
-                    </p>
-                    <div className="mt-3 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-                      {(SPECIFICHE_TECNICHE_OPTIONS[formData.tipoProgetto] ?? []).map((opzione) => (
-                        <label key={opzione} className="flex items-start gap-2 text-sm text-brand-soft">
-                          <input
-                            type="checkbox"
-                            checked={specificheTecniche.includes(opzione)}
-                            onChange={() => toggleSpecificaTecnica(opzione)}
-                            className="mt-0.5 h-4 w-4 shrink-0 rounded border-brand-border-strong text-brand-accent focus:ring-brand-accent"
-                          />
-                          <span>{opzione}</span>
-                        </label>
-                      ))}
-                    </div>
+              <Collapsible open={showSpecifiche}>
+                <div className="mt-4 rounded-xl border border-brand-border bg-brand-surface p-4">
+                  <p className="text-sm font-medium text-brand-soft">Specifiche tecniche (opzionale)</p>
+                  <p className="mt-0.5 text-xs text-brand-muted">
+                    Seleziona tutte le funzionalità che ti interessano per questo progetto.
+                  </p>
+                  <div className="mt-3 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                    {(SPECIFICHE_TECNICHE_OPTIONS[formData.tipoProgetto] ?? []).map((opzione) => (
+                      <label key={opzione} className="flex min-w-0 items-start gap-2 text-sm text-brand-soft">
+                        <input
+                          type="checkbox"
+                          checked={specificheTecniche.includes(opzione)}
+                          onChange={() => toggleSpecificaTecnica(opzione)}
+                          className="mt-0.5 h-4 w-4 shrink-0 rounded border-brand-border-strong text-brand-accent focus:ring-brand-accent"
+                        />
+                        <span className="min-w-0 break-words">{opzione}</span>
+                      </label>
+                    ))}
                   </div>
                 </div>
-              </div>
+              </Collapsible>
             </div>
 
             <div className="space-y-6">
-              <div>
+              <div className="min-w-0">
                 <label htmlFor="budget" className="mb-1 block text-sm font-medium text-brand-soft">
                   Qual è il tuo budget indicativo per questo progetto? (€){" "}
                   <span className="text-brand-accent-light">*</span>
@@ -663,17 +650,15 @@ export default function RichiediPage() {
                     fieldErrors.budget ? "border-brand-accent" : "border-brand-border-strong"
                   }`}
                 />
-                {fieldErrors.budget && (
-                  <p className="mt-1 text-xs text-brand-accent-light">{fieldErrors.budget}</p>
-                )}
-                <p className="mt-1.5 text-xs text-brand-muted">
+                <FieldError message={fieldErrors.budget} />
+                <p className="mt-0.5 text-xs text-brand-muted">
                   Indica una cifra il più precisa possibile. Questo ci permette di dirti subito se il
                   progetto che hai in mente è realizzabile con quel budget, evitando di farti perdere
                   tempo con un preventivo che poi risulta troppo alto rispetto alle tue disponibilità.
                 </p>
               </div>
 
-              <div>
+              <div className="min-w-0">
                 <label htmlFor="tempistiche" className="mb-1 block text-sm font-medium text-brand-soft">
                   Entro quale data ti servirebbe il progetto completato?{" "}
                   <span className="text-brand-accent-light">*</span>
@@ -701,17 +686,15 @@ export default function RichiediPage() {
                     fieldErrors.tempistiche ? "border-brand-accent" : "border-brand-border-strong"
                   } ${scadenzaFlessibile ? "cursor-not-allowed opacity-50" : ""}`}
                 />
-                {fieldErrors.tempistiche && (
-                  <p className="mt-1 text-xs text-brand-accent-light">{fieldErrors.tempistiche}</p>
-                )}
-                <p className="mt-1.5 text-xs text-brand-muted">
+                <FieldError message={fieldErrors.tempistiche} />
+                <p className="mt-0.5 text-xs text-brand-muted">
                   Questa data ci serve per valutare se riusciamo a garantirti il completamento del
                   lavoro entro i tempi che ti servono, tenendo conto degli altri progetti in corso.
                 </p>
               </div>
             </div>
 
-            <div>
+            <div className="min-w-0">
               <label htmlFor="comeConosciuto" className="mb-1 block text-sm font-medium text-brand-soft">
                 Come ci hai conosciuto?
               </label>
@@ -750,17 +733,23 @@ export default function RichiediPage() {
               />
             </label>
 
-            {fileError && <p className="text-xs text-brand-accent-light">{fileError}</p>}
+            <p
+              className={`min-h-[1.125rem] text-xs text-brand-accent-light ${
+                fileError ? "visible" : "invisible"
+              }`}
+            >
+              {fileError || "\u00a0"}
+            </p>
 
-            {files.length > 0 && (
+            <Collapsible open={files.length > 0}>
               <ul className="divide-y divide-brand-border rounded-md border border-brand-border">
                 {files.map((file) => (
                   <li
                     key={`${file.name}-${file.size}`}
-                    className="flex items-center justify-between gap-3 px-3 py-2 text-sm"
+                    className="flex min-w-0 items-center justify-between gap-3 px-3 py-2 text-sm"
                   >
-                    <span className="truncate text-brand-soft">{file.name}</span>
-                    <div className="flex items-center gap-3">
+                    <span className="min-w-0 truncate text-brand-soft">{file.name}</span>
+                    <div className="flex shrink-0 items-center gap-3">
                       <span className="whitespace-nowrap text-xs text-brand-muted">
                         {formatFileSize(file.size)}
                       </span>
@@ -775,7 +764,7 @@ export default function RichiediPage() {
                   </li>
                 ))}
               </ul>
-            )}
+            </Collapsible>
           </section>
 
           <div className="pt-2">

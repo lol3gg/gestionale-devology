@@ -18,6 +18,25 @@ export function formatEuro(value: number) {
   }).format(value);
 }
 
+/** Converte una data ISO ("2026-08-20", da input type="date") in formato leggibile "20/08/2026". */
+export function formatDataItaliana(isoDate: string): string {
+  const [anno, mese, giorno] = isoDate.split("-");
+  return `${giorno}/${mese}/${anno}`;
+}
+
+/**
+ * Converte una data leggibile "20/08/2026" (salvata in "tempistiche") nel
+ * formato ISO "2026-08-20" richiesto da un input type="date". Ritorna "" se
+ * il valore non è una data valida (es. "Flessibile" o vuoto).
+ */
+export function tempisticheToIsoDate(tempistiche: string | null): string {
+  if (!tempistiche) return "";
+  const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(tempistiche.trim());
+  if (!match) return "";
+  const [, giorno, mese, anno] = match;
+  return `${anno}-${mese}-${giorno}`;
+}
+
 /**
  * La colonna "tempistiche" salva una data leggibile in formato "gg/mm/aaaa"
  * (es. "20/08/2026") oppure la stringa "Flessibile". Questo helper prova a

@@ -7,9 +7,16 @@
   --foreground: #eceff8;
 }
 
+/* Evita che la comparsa della scrollbar verticale "stringa" la pagina in orizzontale
+   (effetto tipico quando sezioni condizionali fanno crescere l'altezza del form). */
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
   color: var(--foreground);
   background: var(--background);
+  overflow-x: hidden;
 }
 
 ::selection {

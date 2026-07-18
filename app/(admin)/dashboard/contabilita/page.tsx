@@ -7,6 +7,7 @@ import {
 } from "@/lib/contabilita/format";
 import { RiepilogoCards } from "./_components/RiepilogoCards";
 import { SelettorePeriodo } from "./_components/SelettorePeriodo";
+import { EsportaCsvButton } from "./_components/EsportaCsvButton";
 import { MovimentiTable, type MovimentoItem } from "./_components/MovimentiTable";
 import { NuovoMovimentoForm } from "./_components/NuovoMovimentoForm";
 import { AbbonamentiManager, type AbbonamentoItem } from "./_components/AbbonamentiManager";
@@ -93,7 +94,19 @@ export default async function ContabilitaPage({ searchParams }: ContabilitaPageP
             Entrate, uscite e abbonamenti ricorrenti — {getPeriodoLabel(periodo)}.
           </p>
         </div>
-        <SelettorePeriodo periodo={periodo} />
+        <div className="flex flex-col items-stretch gap-3 sm:items-end">
+          <SelettorePeriodo periodo={periodo} />
+          <EsportaCsvButton
+            periodo={periodo}
+            movimenti={movimenti}
+            totals={{
+              entrateTotali,
+              usciteTotali,
+              saldoNetto,
+              abbonamentiTotaleMensile,
+            }}
+          />
+        </div>
       </div>
 
       {(movimentiError || abbonamentiError) && (

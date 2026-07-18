@@ -11,9 +11,10 @@ import { LogoutButton } from "./_components/LogoutButton";
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
   const supabase = createClient();
 
-  const [{ data: userData }, { count: nuoveCount }] = await Promise.all([
+  const [{ data: userData }, { count: nuoveCount }, { count: archivioCount }] = await Promise.all([
     supabase.auth.getUser(),
     supabase.from("richieste").select("id", { count: "exact", head: true }).eq("stato", "nuovo"),
+    supabase.from("richieste").select("id", { count: "exact", head: true }).eq("stato", "archiviato"),
   ]);
 
   const email = userData.user?.email ?? "Admin";
@@ -36,7 +37,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
           </div>
         </div>
 
-        <DashboardNav nuoveCount={nuoveCount ?? 0} />
+        <DashboardNav nuoveCount={nuoveCount ?? 0} archivioCount={archivioCount ?? 0} />
 
         <div className="space-y-3 border-t border-brand-border p-4">
           <LinkClienteButton />
@@ -84,7 +85,11 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         </header>
 
         <div className="border-b border-brand-border bg-brand-elevated/60 lg:hidden">
-          <DashboardNav nuoveCount={nuoveCount ?? 0} variant="mobile" />
+          <DashboardNav
+            nuoveCount={nuoveCount ?? 0}
+            archivioCount={archivioCount ?? 0}
+            variant="mobile"
+          />
         </div>
 
         <main className="flex-1 px-4 py-8 sm:px-6 lg:px-10 lg:py-10">

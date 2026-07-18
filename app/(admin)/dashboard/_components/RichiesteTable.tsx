@@ -23,11 +23,13 @@ export type RichiestaListItem = {
 type RichiesteTableProps = {
   richieste: RichiestaListItem[];
   totale: number;
+  /** Se true, non applica bordo/ombra esterni (usato quando la tabella è già dentro un wrapper). */
+  bare?: boolean;
 };
 
 type BudgetSortDirection = "desc" | "asc" | null;
 
-export function RichiesteTable({ richieste, totale }: RichiesteTableProps) {
+export function RichiesteTable({ richieste, totale, bare = false }: RichiesteTableProps) {
   const router = useRouter();
   const [budgetSort, setBudgetSort] = useState<BudgetSortDirection>(null);
 
@@ -48,7 +50,13 @@ export function RichiesteTable({ richieste, totale }: RichiesteTableProps) {
   const BudgetSortIcon = budgetSort === "desc" ? ArrowDown : budgetSort === "asc" ? ArrowUp : ArrowUpDown;
 
   return (
-    <div className="overflow-hidden rounded-brand-lg border border-brand-border bg-brand-elevated shadow-brand-md">
+    <div
+      className={
+        bare
+          ? "overflow-hidden"
+          : "overflow-hidden rounded-brand-lg border border-brand-border bg-brand-elevated shadow-brand-md"
+      }
+    >
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-brand-border">
           <thead className="bg-brand-surface/60">

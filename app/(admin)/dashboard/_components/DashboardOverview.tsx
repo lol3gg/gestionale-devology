@@ -1,12 +1,26 @@
 "use client";
 
-import { useMemo, useState, type ChangeEvent } from "react";
+import { useEffect, useState, useTransition, type ChangeEvent } from "react";
+import { useRouter } from "next/navigation";
 import { Inbox, Sparkles, Hourglass, Send, CheckCircle2, Search, X } from "lucide-react";
 import { STATO_OPTIONS, type StatoRichiesta } from "@/lib/richieste/stato";
+import { TIPO_PROGETTO_OPTIONS } from "@/lib/richieste/progetto";
+import { buildDashboardHref } from "@/lib/richieste/dashboardQuery";
 import { RichiesteTable, type RichiestaListItem } from "./RichiesteTable";
+import { PaginazioneRichieste } from "./PaginazioneRichieste";
 
 type DashboardOverviewProps = {
   richieste: RichiestaListItem[];
+  /** Conteggio exact dei risultati che rispettano i filtri correnti (per la paginazione). */
+  totaleFiltrato: number;
+  pagina: number;
+  totalePagine: number;
+  q: string;
+  stato: StatoRichiesta | "";
+  tipo: string;
+  /** Conteggi globali (senza filtri) per le card KPI. */
+  conteggiPerStato: Partial<Record<StatoRichiesta, number>>;
+  totaleGlobale: number;
 };
 
 const STAT_CARDS: {
@@ -27,86 +41,113 @@ const STAT_CARDS: {
     value: "nuovo",
     label: "Nuove",
     icon: Sparkles,
-    activeClasses: "ring-blue-500/50 shadow-[0_0_0_1px_rgba(59,130,246,0.35),0_20px_45px_-12px_rgba(59,130,246,0.35)]",
+    activeClasses:
+      "ring-blue-500/50 shadow-[0_0_0_1px_rgba(59,130,246,0.35),0_20px_45px_-12px_rgba(59,130,246,0.35)]",
     iconClasses: "bg-blue-500/15 text-blue-300 ring-blue-500/25",
   },
   {
     value: "in_valutazione",
     label: "In valutazione",
     icon: Hourglass,
-    activeClasses: "ring-amber-500/50 shadow-[0_0_0_1px_rgba(245,158,11,0.35),0_20px_45px_-12px_rgba(245,158,11,0.35)]",
+    activeClasses:
+      "ring-amber-500/50 shadow-[0_0_0_1px_rgba(245,158,11,0.35),0_20px_45px_-12px_rgba(245,158,11,0.35)]",
     iconClasses: "bg-amber-500/15 text-amber-300 ring-amber-500/25",
   },
   {
     value: "preventivo_inviato",
     label: "Preventivo inviato",
     icon: Send,
-    activeClasses: "ring-orange-500/50 shadow-[0_0_0_1px_rgba(249,115,22,0.35),0_20px_45px_-12px_rgba(249,115,22,0.35)]",
+    activeClasses:
+      "ring-orange-500/50 shadow-[0_0_0_1px_rgba(249,115,22,0.35),0_20px_45px_-12px_rgba(249,115,22,0.35)]",
     iconClasses: "bg-orange-500/15 text-orange-300 ring-orange-500/25",
   },
   {
     value: "accettato",
     label: "Accettate",
     icon: CheckCircle2,
-    activeClasses: "ring-emerald-500/50 shadow-[0_0_0_1px_rgba(16,185,129,0.35),0_20px_45px_-12px_rgba(16,185,129,0.35)]",
+    activeClasses:
+      "ring-emerald-500/50 shadow-[0_0_0_1px_rgba(16,185,129,0.35),0_20px_45px_-12px_rgba(16,185,129,0.35)]",
     iconClasses: "bg-emerald-500/15 text-emerald-300 ring-emerald-500/25",
   },
 ];
 
-export function DashboardOverview({ richieste }: DashboardOverviewProps) {
-  const [search, setSearch] = useState("");
-  const [statoFilter, setStatoFilter] = useState("");
-  const [tipoProgettoFilter, setTipoProgettoFilter] = useState("");
+export function DashboardOverview({
+  richieste,
+  totaleFiltrato,
+  pagina,
+  totalePagine,
+  q,
+  stato,
+  tipo,
+  conteggiPerStato,
+  totaleGlobale,
+}: DashboardOverviewProps) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [searchInput, setSearchInput] = useState(q);
 
-  const tipiProgettoDisponibili = useMemo(() => {
-    const trovati = new Set<string>();
-    for (const richiesta of richieste) {
-      if (richiesta.tipo_progetto) trovati.add(richiesta.tipo_progetto);
-    }
-    return Array.from(trovati).sort((a, b) => a.localeCompare(b, "it"));
-  }, [richieste]);
+  // Allinea l'input locale se l'URL cambia (es. tasto indietro del browser).
+  useEffect(() => {
+    setSearchInput(q);
+  }, [q]);
 
-  const conteggiPerStato = useMemo(() => {
-    const counts: Partial<Record<StatoRichiesta, number>> = {};
-    for (const richiesta of richieste) {
-      const stato = richiesta.stato as StatoRichiesta;
-      counts[stato] = (counts[stato] ?? 0) + 1;
-    }
-    return counts;
-  }, [richieste]);
-
-  const richiesteFiltrate = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    return richieste.filter((richiesta) => {
-      if (statoFilter && richiesta.stato !== statoFilter) return false;
-      if (tipoProgettoFilter && richiesta.tipo_progetto !== tipoProgettoFilter) return false;
-      if (!term) return true;
-      const haystack = `${richiesta.nome} ${richiesta.cognome} ${richiesta.nome_azienda ?? ""}`.toLowerCase();
-      return haystack.includes(term);
+  function navigate(next: { pagina?: number; q?: string; stato?: string; tipo?: string }) {
+    const href = buildDashboardHref({
+      pagina: next.pagina ?? 1,
+      q: next.q ?? q,
+      stato: next.stato ?? stato,
+      tipo: next.tipo ?? tipo,
     });
-  }, [richieste, search, statoFilter, tipoProgettoFilter]);
+    startTransition(() => {
+      router.push(href);
+    });
+  }
+
+  // Debounce della ricerca testuale: aggiorna l'URL (e riparte da pagina 1).
+  useEffect(() => {
+    const trimmed = searchInput.trim();
+    if (trimmed === q) return;
+
+    const timer = window.setTimeout(() => {
+      const href = buildDashboardHref({
+        pagina: 1,
+        q: trimmed,
+        stato,
+        tipo,
+      });
+      startTransition(() => {
+        router.push(href);
+      });
+    }, 300);
+
+    return () => window.clearTimeout(timer);
+  }, [searchInput, q, stato, tipo, router]);
 
   function handleStatoSelectChange(event: ChangeEvent<HTMLSelectElement>) {
-    setStatoFilter(event.target.value);
+    navigate({ pagina: 1, stato: event.target.value });
   }
 
   function handleTipoProgettoSelectChange(event: ChangeEvent<HTMLSelectElement>) {
-    setTipoProgettoFilter(event.target.value);
+    navigate({ pagina: 1, tipo: event.target.value });
+  }
+
+  function toggleStatoCard(value: StatoRichiesta | "") {
+    navigate({ pagina: 1, stato: stato === value ? "" : value });
   }
 
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6 ${isPending ? "opacity-70 transition-opacity" : ""}`}>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         {STAT_CARDS.map((card) => {
-          const count = card.value === "" ? richieste.length : conteggiPerStato[card.value] ?? 0;
-          const isActive = statoFilter === card.value;
+          const count = card.value === "" ? totaleGlobale : conteggiPerStato[card.value] ?? 0;
+          const isActive = stato === card.value;
           const Icon = card.icon;
 
           return (
             <button
               key={card.label}
               type="button"
-              onClick={() => setStatoFilter((current) => (current === card.value ? "" : card.value))}
+              onClick={() => toggleStatoCard(card.value)}
               className={`group relative overflow-hidden rounded-brand-lg border border-brand-border bg-brand-elevated p-4 text-left shadow-brand-md ring-1 ring-inset ring-transparent transition-all hover:-translate-y-0.5 hover:shadow-brand-glow sm:p-5 ${
                 isActive ? `ring-2 ${card.activeClasses}` : ""
               }`}
@@ -131,14 +172,17 @@ export function DashboardOverview({ richieste }: DashboardOverviewProps) {
           <input
             type="text"
             placeholder="Cerca per nome, cognome o azienda..."
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            value={searchInput}
+            onChange={(event) => setSearchInput(event.target.value)}
             className="w-full rounded-xl border border-brand-border-strong bg-brand-surface py-2.5 pl-9 pr-9 text-sm text-brand-text placeholder:text-brand-muted shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-accent"
           />
-          {search && (
+          {searchInput && (
             <button
               type="button"
-              onClick={() => setSearch("")}
+              onClick={() => {
+                setSearchInput("");
+                navigate({ pagina: 1, q: "" });
+              }}
               aria-label="Cancella ricerca"
               className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-brand-muted transition hover:text-brand-accent-light"
             >
@@ -149,25 +193,25 @@ export function DashboardOverview({ richieste }: DashboardOverviewProps) {
 
         <div className="flex flex-col gap-3 sm:flex-row">
           <select
-            value={tipoProgettoFilter}
+            value={tipo}
             onChange={handleTipoProgettoSelectChange}
             className="w-full rounded-xl border border-brand-border-strong bg-brand-surface px-3 py-2.5 text-sm text-brand-text shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-accent sm:w-56"
           >
             <option value="">Tutti i tipi di progetto</option>
-            {tipiProgettoDisponibili.map((tipo) => (
-              <option key={tipo} value={tipo}>
-                {tipo}
+            {TIPO_PROGETTO_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {option}
               </option>
             ))}
           </select>
 
           <select
-            value={statoFilter}
+            value={stato}
             onChange={handleStatoSelectChange}
             className="w-full rounded-xl border border-brand-border-strong bg-brand-surface px-3 py-2.5 text-sm text-brand-text shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-accent sm:w-56"
           >
             <option value="">Tutti gli stati</option>
-            {STATO_OPTIONS.map((option) => (
+            {STATO_OPTIONS.filter((option) => option.value !== "archiviato").map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>
@@ -176,7 +220,16 @@ export function DashboardOverview({ richieste }: DashboardOverviewProps) {
         </div>
       </div>
 
-      <RichiesteTable richieste={richiesteFiltrate} totale={richieste.length} />
+      <div className="overflow-hidden rounded-brand-lg border border-brand-border bg-brand-elevated shadow-brand-md">
+        <RichiesteTable richieste={richieste} totale={totaleFiltrato} bare />
+        <PaginazioneRichieste
+          pagina={pagina}
+          totalePagine={totalePagine}
+          q={q}
+          stato={stato}
+          tipo={tipo}
+        />
+      </div>
     </div>
   );
 }

@@ -1,22 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import {
-  AlertTriangle,
-  ArrowLeft,
-  Building2,
-  Calendar,
-  Download,
-  FileQuestion,
-  Layers,
-  Mail,
-  MessageSquareQuote,
-  Paperclip,
-  Phone,
-  Wallet,
-} from "lucide-react";
+import { ArrowLeft, Download, Mail, Paperclip } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getAvatarClasses, getInitials } from "@/lib/richieste/initials";
-import { getGiorniAllaScadenza, formatEuro } from "@/lib/richieste/format";
 import { regenerateSignedUrl } from "@/lib/storage/signedUrl";
 import { StatoSelect } from "../_components/StatoSelect";
 import { StatoBadge } from "../_components/StatoBadge";
@@ -24,42 +10,16 @@ import { StatoStepper } from "../_components/StatoStepper";
 import { NoteInterneForm } from "../_components/NoteInterneForm";
 import { FileIcon } from "../_components/FileIcon";
 import { PreventiviManager, type PreventivoItem } from "../_components/PreventiviManager";
+import { ModificaRichiestaForm } from "../_components/ModificaRichiestaForm";
+import { EliminaRichiestaButton } from "../_components/EliminaRichiestaButton";
+import { ArchiviaRichiestaButton } from "../_components/ArchiviaRichiestaButton";
+import type { TipoCliente } from "../actions";
 
 export const dynamic = "force-dynamic";
 
 const ALLEGATI_BUCKET = "allegati-clienti";
 const PREVENTIVI_BUCKET = "preventivi-clienti";
 const SIGNED_URL_EXPIRY_SECONDS = 60 * 60 * 4; // 4 ore
-
-function DetailItem({
-  icon: Icon,
-  label,
-  value,
-  warning,
-}: {
-  icon: typeof Mail;
-  label: string;
-  value: string;
-  warning?: string;
-}) {
-  return (
-    <div className="flex items-start gap-3">
-      <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-surface text-brand-muted ring-1 ring-inset ring-brand-border">
-        <Icon className="h-3.5 w-3.5" />
-      </span>
-      <div className="min-w-0">
-        <dt className="text-xs font-medium uppercase tracking-wide text-brand-muted">{label}</dt>
-        <dd className="mt-0.5 truncate text-sm font-medium text-brand-text">{value}</dd>
-        {warning && (
-          <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-brand-accent/15 px-2 py-0.5 text-[11px] font-semibold text-brand-accent-light ring-1 ring-inset ring-brand-accent/30">
-            <AlertTriangle className="h-3 w-3" />
-            {warning}
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
 
 type RichiestaDetailPageProps = {
   params: { id: string };
@@ -118,19 +78,8 @@ export default async function RichiestaDetailPage({ params }: RichiestaDetailPag
   const nomeCompleto = `${richiesta.nome} ${richiesta.cognome}`.trim();
   const avatarClasses = getAvatarClasses(richiesta.id);
   const isOffFunnel = richiesta.stato === "rifiutato" || richiesta.stato === "archiviato";
-
-  // Avviso visivo se la scadenza richiesta dal cliente è vicina (entro 2 settimane) o già superata.
-  const giorniAllaScadenza = getGiorniAllaScadenza(richiesta.tempistiche);
-  let scadenzaWarning: string | undefined;
-  if (giorniAllaScadenza !== null) {
-    if (giorniAllaScadenza < 0) {
-      scadenzaWarning = `Scadenza superata di ${Math.abs(giorniAllaScadenza)} giorni`;
-    } else if (giorniAllaScadenza === 0) {
-      scadenzaWarning = "Scade oggi";
-    } else if (giorniAllaScadenza <= 14) {
-      scadenzaWarning = `Scade in ${giorniAllaScadenza} giorni`;
-    }
-  }
+  const tipoCliente: TipoCliente =
+    richiesta.tipo_cliente === "azienda" ? "azienda" : "privato";
 
   return (
     <div className="space-y-6">
@@ -179,83 +128,25 @@ export default async function RichiestaDetailPage({ params }: RichiestaDetailPag
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          <section className="rounded-brand-lg border border-brand-border bg-brand-elevated p-6 shadow-brand-md">
-            <h2 className="text-base font-semibold text-brand-text">Dettagli richiesta</h2>
-            <dl className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">
-              <DetailItem icon={Mail} label="Email" value={richiesta.email} />
-              <DetailItem icon={Phone} label="Telefono" value={richiesta.telefono ?? "—"} />
-              <DetailItem
-                icon={Building2}
-                label="Tipo cliente"
-                value={richiesta.tipo_cliente === "azienda" ? "Azienda" : "Privato"}
-              />
-              {richiesta.tipo_cliente === "azienda" && (
-                <>
-                  <DetailItem
-                    icon={Building2}
-                    label="Nome azienda"
-                    value={richiesta.nome_azienda ?? "—"}
-                  />
-                  <DetailItem icon={FileQuestion} label="Partita IVA" value={richiesta.partita_iva ?? "—"} />
-                </>
-              )}
-              <DetailItem icon={Layers} label="Tipo progetto" value={richiesta.tipo_progetto ?? "—"} />
-              <DetailItem
-                icon={Wallet}
-                label="Budget indicativo"
-                value={richiesta.budget != null ? formatEuro(richiesta.budget) : "—"}
-              />
-              <DetailItem
-                icon={Calendar}
-                label="Scadenza richiesta"
-                value={richiesta.tempistiche ?? "—"}
-                warning={scadenzaWarning}
-              />
-              <DetailItem
-                icon={MessageSquareQuote}
-                label="Come ci ha conosciuto"
-                value={richiesta.come_conosciuto ?? "—"}
-              />
-              <DetailItem
-                icon={Calendar}
-                label="Data richiesta"
-                value={new Date(richiesta.created_at).toLocaleString("it-IT")}
-              />
-            </dl>
-
-            <div className="mt-6 rounded-xl border border-brand-border bg-brand-surface p-4">
-              <h3 className="flex items-center gap-2 text-sm font-semibold text-brand-soft">
-                <MessageSquareQuote className="h-4 w-4 text-brand-accent-light" />
-                Descrizione progetto
-              </h3>
-              <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-brand-muted">
-                {richiesta.descrizione_progetto}
-              </p>
-            </div>
-
-            {richiesta.tipo_progetto && (
-              <div className="mt-4 rounded-xl border border-brand-border bg-brand-surface p-4">
-                <h3 className="flex items-center gap-2 text-sm font-semibold text-brand-soft">
-                  <Layers className="h-4 w-4 text-brand-accent-light" />
-                  Specifiche tecniche
-                </h3>
-                {richiesta.specifiche_tecniche && richiesta.specifiche_tecniche.length > 0 ? (
-                  <ul className="mt-3 flex flex-wrap gap-2">
-                    {richiesta.specifiche_tecniche.map((specifica: string) => (
-                      <li
-                        key={specifica}
-                        className="rounded-full bg-brand-accent/10 px-3 py-1 text-xs font-medium text-brand-accent-light ring-1 ring-inset ring-brand-accent/25"
-                      >
-                        {specifica}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="mt-2 text-sm text-brand-muted">Nessuna specifica indicata.</p>
-                )}
-              </div>
-            )}
-          </section>
+          <ModificaRichiestaForm
+            richiesta={{
+              id: richiesta.id,
+              nome: richiesta.nome,
+              cognome: richiesta.cognome,
+              email: richiesta.email,
+              telefono: richiesta.telefono,
+              tipo_cliente: tipoCliente,
+              nome_azienda: richiesta.nome_azienda,
+              partita_iva: richiesta.partita_iva,
+              descrizione_progetto: richiesta.descrizione_progetto,
+              tipo_progetto: richiesta.tipo_progetto,
+              specifiche_tecniche: richiesta.specifiche_tecniche,
+              budget: richiesta.budget != null ? Number(richiesta.budget) : null,
+              tempistiche: richiesta.tempistiche,
+              come_conosciuto: richiesta.come_conosciuto,
+              created_at: richiesta.created_at,
+            }}
+          />
 
           <section className="rounded-brand-lg border border-brand-border bg-brand-elevated p-6 shadow-brand-md">
             <h2 className="flex items-center gap-2 text-base font-semibold text-brand-text">
@@ -307,6 +198,17 @@ export default async function RichiestaDetailPage({ params }: RichiestaDetailPag
         <div className="space-y-6">
           <NoteInterneForm richiestaId={richiesta.id} noteIniziali={richiesta.note_interne ?? ""} />
         </div>
+      </div>
+
+      <div className="space-y-4">
+        <ArchiviaRichiestaButton
+          richiestaId={richiesta.id}
+          statoCorrente={richiesta.stato}
+        />
+        <EliminaRichiestaButton
+          richiestaId={richiesta.id}
+          nomeCliente={nomeCompleto || "questa richiesta"}
+        />
       </div>
     </div>
   );
