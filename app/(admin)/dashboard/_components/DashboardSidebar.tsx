@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
-import { ArrowLeft, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { DashboardNav } from "./DashboardNav";
 import { LinkClienteButton } from "./LinkClienteButton";
 import { LogoutButton } from "./LogoutButton";
@@ -98,16 +97,6 @@ export function DashboardSidebar({
 
       <div className={`space-y-3 border-t border-brand-border ${collapsed ? "p-2" : "p-4"}`}>
         <LinkClienteButton variant={collapsed ? "compact" : "sidebar"} />
-
-        {!collapsed && (
-          <Link
-            href="/"
-            className="flex items-center gap-1.5 px-2 text-xs font-medium text-brand-muted transition hover:text-brand-accent-light"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Torna al sito pubblico
-          </Link>
-        )}
 
         <div
           className={`flex items-center rounded-xl border border-brand-border bg-brand-surface ${
