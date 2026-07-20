@@ -30,42 +30,43 @@ export default async function DashboardLayout({ children }: { children: ReactNod
       />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        {/* Su desktop non c'è una topbar dedicata: i pulsanti restano fissi in alto a destra. */}
+        {/* Desktop: controlli fissi in alto a destra. */}
         <div className="fixed right-6 top-6 z-50 hidden items-center gap-2 lg:flex">
           <ThemeToggle />
           <FullscreenToggle />
         </div>
 
-        <header className="flex items-center justify-between border-b border-brand-border bg-brand-elevated/80 px-4 py-4 backdrop-blur-xl lg:hidden">
-          <span className="flex items-center gap-2.5 text-base font-bold tracking-[-0.02em] text-brand-text">
+        {/* Mobile header compatto */}
+        <header className="sticky top-0 z-40 flex items-center justify-between gap-3 border-b border-brand-border bg-brand-elevated/90 px-3 py-3 backdrop-blur-xl pt-safe sm:px-4 lg:hidden">
+          <span className="flex min-w-0 items-center gap-2 text-sm font-bold tracking-[-0.02em] text-brand-text">
             <Image
               src="/logo/devology-icon.svg"
               alt=""
               width={130}
               height={100}
-              className="h-7 w-auto"
+              className="h-7 w-auto shrink-0"
             />
-            Pannello Admin
+            <span className="truncate">Admin</span>
           </span>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-1.5">
             <LinkClienteButton variant="compact" />
             <ThemeToggle />
-            <FullscreenToggle />
-            <LogoutButton />
+            <LogoutButton compact />
           </div>
         </header>
 
-        <div className="border-b border-brand-border bg-brand-elevated/60 lg:hidden">
+        <main className="flex-1 px-3 py-5 pb-[calc(5.5rem+env(safe-area-inset-bottom))] sm:px-6 sm:py-8 lg:px-10 lg:py-10 lg:pb-10">
+          <div className="mx-auto max-w-[1600px]">{children}</div>
+        </main>
+
+        {/* Mobile: tab bar fissa in basso */}
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-brand-border bg-brand-elevated/95 backdrop-blur-xl lg:hidden">
           <DashboardNav
             nuoveCount={nuoveCount ?? 0}
             archivioCount={archivioCount ?? 0}
-            variant="mobile"
+            variant="bottom"
           />
         </div>
-
-        <main className="flex-1 px-4 py-8 sm:px-6 lg:px-10 lg:py-10">
-          <div className="mx-auto max-w-6xl">{children}</div>
-        </main>
       </div>
     </div>
   );

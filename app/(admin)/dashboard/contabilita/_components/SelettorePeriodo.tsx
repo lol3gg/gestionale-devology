@@ -55,14 +55,14 @@ export function SelettorePeriodo({ periodo }: SelettorePeriodoProps) {
   const isMeseCorrente = periodo.tipo === "mese" && periodo.mese === getPeriodoCorrente();
 
   return (
-    <div className="flex flex-col items-stretch gap-2 sm:items-end">
-      <div className="flex flex-wrap items-center gap-1 rounded-xl border border-brand-border-strong bg-brand-surface p-1">
+    <div className="flex w-full flex-col items-stretch gap-2 sm:w-auto sm:items-end">
+      <div className="grid grid-cols-2 gap-1 rounded-xl border border-brand-border-strong bg-brand-surface p-1 sm:flex sm:flex-wrap sm:items-center">
         {TABS.map((tab) => (
           <button
             key={tab.tipo}
             type="button"
             onClick={() => selezionaTab(tab.tipo)}
-            className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+            className={`min-h-10 rounded-lg px-3 py-2 text-xs font-semibold transition sm:min-h-0 sm:py-1.5 ${
               periodo.tipo === tab.tipo
                 ? "bg-gradient-to-b from-[#e01431] via-brand-accent to-[#b00f26] text-white shadow-sm"
                 : "text-brand-muted hover:bg-brand-border-strong hover:text-brand-text"

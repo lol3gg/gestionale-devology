@@ -149,6 +149,9 @@ create table preventivi (
   -- Può essere generato automaticamente se non indicato dall'admin.
   numero_preventivo text,
   data_invio date not null,
+  prezzo numeric(12, 2),
+  stato text not null default 'inviato'
+    check (stato in ('inviato', 'in_attesa', 'accettato', 'rifiutato', 'scaduto')),
   nome_file text not null,
   url_file text not null
 );

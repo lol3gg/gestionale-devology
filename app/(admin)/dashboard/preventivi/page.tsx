@@ -16,7 +16,7 @@ export default async function PreventiviPage() {
   const { data: preventiviRows, error } = await supabase
     .from("preventivi")
     .select(
-      "id, numero_preventivo, data_invio, nome_file, url_file, nome, cognome, azienda, created_at, richieste(id, nome, cognome)"
+      "id, numero_preventivo, data_invio, nome_file, url_file, nome, cognome, azienda, prezzo, stato, created_at, richieste(id, nome, cognome)"
     )
     .order("data_invio", { ascending: false });
 
@@ -30,6 +30,8 @@ export default async function PreventiviPage() {
       nome: preventivo.nome,
       cognome: preventivo.cognome,
       azienda: preventivo.azienda,
+      prezzo: preventivo.prezzo != null ? Number(preventivo.prezzo) : null,
+      stato: preventivo.stato ?? "inviato",
       richiesta: (Array.isArray(preventivo.richieste)
         ? preventivo.richieste[0]
         : preventivo.richieste) as RichiestaRef,
@@ -52,7 +54,7 @@ export default async function PreventiviPage() {
           Preventivi
         </h1>
         <p className="mt-1 text-sm text-brand-muted">
-          Crea preventivi con nome, cognome e PDF, oppure consulta quelli collegati alle richieste.
+          Totale preventivato, filtra attivi/non attivi e crea nuovi preventivi.
         </p>
       </div>
 

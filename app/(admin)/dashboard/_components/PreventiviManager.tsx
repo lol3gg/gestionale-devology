@@ -4,6 +4,13 @@ import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { Download, FileText, Loader2, Trash2, UploadCloud } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { extractStoragePath } from "@/lib/storage/signedUrl";
+import { formatEuro } from "@/lib/richieste/format";
+import {
+  STATO_PREVENTIVO_DEFAULT,
+  STATO_PREVENTIVO_OPTIONS,
+  type StatoPreventivo,
+} from "@/lib/preventivi/stato";
+import { StatoPreventivoBadge } from "../preventivi/_components/StatoPreventivoBadge";
 
 const BUCKET = "preventivi-clienti";
 const MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024; // 15MB
@@ -16,6 +23,8 @@ export type PreventivoItem = {
   nome_file: string;
   url_file: string;
   created_at: string;
+  prezzo: number | null;
+  stato: string;
   downloadUrl: string | null;
 };
 
@@ -36,10 +45,13 @@ export function PreventiviManager({ richiestaId, preventiviIniziali }: Preventiv
   const [preventivi, setPreventivi] = useState(preventiviIniziali);
   const [numero, setNumero] = useState("");
   const [dataInvio, setDataInvio] = useState(todayIsoDate());
+  const [prezzo, setPrezzo] = useState("");
+  const [stato, setStato] = useState<StatoPreventivo>(STATO_PREVENTIVO_DEFAULT);
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
@@ -72,8 +84,34 @@ export function PreventiviManager({ richiestaId, preventiviIniziali }: Preventiv
   function resetForm() {
     setNumero("");
     setDataInvio(todayIsoDate());
+    setPrezzo("");
+    setStato(STATO_PREVENTIVO_DEFAULT);
     setFile(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  async function handleStatoChange(preventivo: PreventivoItem, nuovoStato: StatoPreventivo) {
+    if (preventivo.stato === nuovoStato) return;
+    setUpdatingId(preventivo.id);
+    setErrorMessage(null);
+    const previous = preventivo.stato;
+    setPreventivi((current) =>
+      current.map((item) => (item.id === preventivo.id ? { ...item, stato: nuovoStato } : item))
+    );
+
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("preventivi")
+      .update({ stato: nuovoStato })
+      .eq("id", preventivo.id);
+
+    if (error) {
+      setPreventivi((current) =>
+        current.map((item) => (item.id === preventivo.id ? { ...item, stato: previous } : item))
+      );
+      setErrorMessage(error.message);
+    }
+    setUpdatingId(null);
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -88,6 +126,13 @@ export function PreventiviManager({ richiestaId, preventiviIniziali }: Preventiv
       setErrorMessage("Inserisci la data di invio.");
       return;
     }
+
+    const prezzoNumber = prezzo.trim() === "" ? null : Number(prezzo.replace(",", "."));
+    if (prezzo.trim() !== "" && (prezzoNumber == null || Number.isNaN(prezzoNumber) || prezzoNumber < 0)) {
+      setErrorMessage("Inserisci un prezzo valido.");
+      return;
+    }
+
     if (!file) {
       setErrorMessage("Seleziona il PDF del preventivo.");
       return;
@@ -118,6 +163,8 @@ export function PreventiviManager({ richiestaId, preventiviIniziali }: Preventiv
         richiesta_id: richiestaId,
         numero_preventivo: numero.trim(),
         data_invio: dataInvio,
+        prezzo: prezzoNumber,
+        stato,
         nome_file: file.name,
         url_file: urlFile,
       })
@@ -132,9 +179,15 @@ export function PreventiviManager({ richiestaId, preventiviIniziali }: Preventiv
     }
 
     setPreventivi((current) =>
-      [{ ...inserted, downloadUrl: urlFile } as PreventivoItem, ...current].sort((a, b) =>
-        a.data_invio < b.data_invio ? 1 : -1
-      )
+      [
+        {
+          ...inserted,
+          prezzo: inserted.prezzo != null ? Number(inserted.prezzo) : null,
+          stato: inserted.stato ?? STATO_PREVENTIVO_DEFAULT,
+          downloadUrl: urlFile,
+        } as PreventivoItem,
+        ...current,
+      ].sort((a, b) => (a.data_invio < b.data_invio ? 1 : -1))
     );
     resetForm();
     setIsUploading(false);
@@ -192,7 +245,26 @@ export function PreventiviManager({ richiestaId, preventiviIniziali }: Preventiv
                 </p>
                 <p className="text-xs text-brand-muted">
                   Inviato il {formatDataInvio(preventivo.data_invio)}
+                  {preventivo.prezzo != null ? ` · ${formatEuro(Number(preventivo.prezzo))}` : ""}
                 </p>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <StatoPreventivoBadge stato={preventivo.stato || STATO_PREVENTIVO_DEFAULT} />
+                  <select
+                    value={preventivo.stato || STATO_PREVENTIVO_DEFAULT}
+                    disabled={updatingId === preventivo.id}
+                    onChange={(event) =>
+                      handleStatoChange(preventivo, event.target.value as StatoPreventivo)
+                    }
+                    aria-label="Cambia stato preventivo"
+                    className="rounded-lg border border-brand-border-strong bg-brand-elevated px-2 py-1 text-xs font-medium text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-accent disabled:opacity-60"
+                  >
+                    {STATO_PREVENTIVO_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
               {preventivo.downloadUrl ? (
                 <a
@@ -261,6 +333,39 @@ export function PreventiviManager({ richiestaId, preventiviIniziali }: Preventiv
               onChange={(event) => setDataInvio(event.target.value)}
               className="w-full rounded-lg border border-brand-border-strong bg-brand-surface px-3 py-2 text-sm text-brand-text shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-accent"
             />
+          </div>
+          <div>
+            <label htmlFor="prezzo_preventivo" className="mb-1 block text-xs font-medium text-brand-soft">
+              Prezzo €
+            </label>
+            <input
+              id="prezzo_preventivo"
+              type="number"
+              min="0"
+              step="0.01"
+              inputMode="decimal"
+              placeholder="Es. 1500"
+              value={prezzo}
+              onChange={(event) => setPrezzo(event.target.value)}
+              className="w-full rounded-lg border border-brand-border-strong bg-brand-surface px-3 py-2 text-sm text-brand-text placeholder:text-brand-muted shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-accent"
+            />
+          </div>
+          <div>
+            <label htmlFor="stato_preventivo" className="mb-1 block text-xs font-medium text-brand-soft">
+              Stato
+            </label>
+            <select
+              id="stato_preventivo"
+              value={stato}
+              onChange={(event) => setStato(event.target.value as StatoPreventivo)}
+              className="w-full rounded-lg border border-brand-border-strong bg-brand-surface px-3 py-2 text-sm text-brand-text shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-accent"
+            >
+              {STATO_PREVENTIVO_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 

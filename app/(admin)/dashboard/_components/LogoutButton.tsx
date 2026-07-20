@@ -25,7 +25,7 @@ export function LogoutButton({ compact = false }: { compact?: boolean }) {
         disabled={isLoading}
         title="Logout"
         aria-label="Logout"
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-brand-muted transition hover:bg-brand-accent/10 hover:text-brand-accent-light disabled:opacity-60"
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-brand-border bg-brand-elevated text-brand-muted shadow-sm transition hover:border-brand-accent/40 hover:text-brand-accent-light disabled:opacity-60"
       >
         <LogOut className="h-4 w-4" />
       </button>

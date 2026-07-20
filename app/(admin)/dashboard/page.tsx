@@ -103,7 +103,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         <p className="mt-1 text-sm text-brand-muted">
           Richieste attive dal form pubblico. Quelle archiviate sono nella sezione{" "}
           <a href="/dashboard/archivio" className="font-semibold text-brand-accent-light hover:underline">
-            Archivio
+            Archivio cliente
           </a>
           .
         </p>

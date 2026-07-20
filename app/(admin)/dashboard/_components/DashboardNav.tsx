@@ -2,19 +2,20 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Archive, FileText, Inbox, Wallet } from "lucide-react";
+import { Archive, FileText, Inbox, Megaphone, Wallet } from "lucide-react";
 
 /**
  * Sezioni "di primo livello" note, usate per capire se la rotta corrente
  * (es. "/dashboard/xyz") appartiene a "Richieste" (una richiesta specifica)
  * oppure a una sezione dedicata.
  */
-const SEZIONI_DEDICATE = ["preventivi", "contabilita", "archivio"];
+const SEZIONI_DEDICATE = ["preventivi", "contabilita", "archivio", "prontopro"];
 
 const NAV_ITEMS = [
   {
     href: "/dashboard",
     label: "Richieste",
+    shortLabel: "Richieste",
     icon: Inbox,
     badgeKey: "nuove" as const,
     isActive: (pathname: string) => {
@@ -24,7 +25,8 @@ const NAV_ITEMS = [
   },
   {
     href: "/dashboard/archivio",
-    label: "Archivio",
+    label: "Archivio cliente",
+    shortLabel: "Archivio",
     icon: Archive,
     badgeKey: "archivio" as const,
     isActive: (pathname: string) => pathname.startsWith("/dashboard/archivio"),
@@ -32,6 +34,7 @@ const NAV_ITEMS = [
   {
     href: "/dashboard/preventivi",
     label: "Preventivi",
+    shortLabel: "Preventivi",
     icon: FileText,
     badgeKey: null,
     isActive: (pathname: string) => pathname.startsWith("/dashboard/preventivi"),
@@ -39,16 +42,25 @@ const NAV_ITEMS = [
   {
     href: "/dashboard/contabilita",
     label: "Contabilità",
+    shortLabel: "Contab.",
     icon: Wallet,
     badgeKey: null,
     isActive: (pathname: string) => pathname.startsWith("/dashboard/contabilita"),
+  },
+  {
+    href: "/dashboard/prontopro",
+    label: "ProntoPro",
+    shortLabel: "ProntoPro",
+    icon: Megaphone,
+    badgeKey: null,
+    isActive: (pathname: string) => pathname.startsWith("/dashboard/prontopro"),
   },
 ];
 
 type DashboardNavProps = {
   nuoveCount: number;
   archivioCount?: number;
-  variant?: "sidebar" | "mobile";
+  variant?: "sidebar" | "mobile" | "bottom";
   collapsed?: boolean;
 };
 
@@ -59,17 +71,20 @@ export function DashboardNav({
   collapsed = false,
 }: DashboardNavProps) {
   const pathname = usePathname() ?? "";
+  const isBottom = variant === "bottom";
   const isMobile = variant === "mobile";
-  const isIconOnly = !isMobile && collapsed;
+  const isIconOnly = !isMobile && !isBottom && collapsed;
 
   return (
     <nav
       className={
-        isMobile
-          ? "flex items-center gap-2 overflow-x-auto px-4 py-2.5"
-          : isIconOnly
-            ? "flex-1 space-y-1 px-2 py-4"
-            : "flex-1 space-y-1 px-4 py-6"
+        isBottom
+          ? "grid grid-cols-5 gap-0 px-0.5 pb-safe pt-1"
+          : isMobile
+            ? "flex items-center gap-2 overflow-x-auto px-4 py-2.5"
+            : isIconOnly
+              ? "flex-1 space-y-1 px-2 py-4"
+              : "flex-1 space-y-1 px-4 py-6"
       }
     >
       {NAV_ITEMS.map((item) => {
@@ -78,6 +93,40 @@ export function DashboardNav({
         const badgeCount =
           item.badgeKey === "nuove" ? nuoveCount : item.badgeKey === "archivio" ? archivioCount : 0;
         const showBadge = !!item.badgeKey && badgeCount > 0;
+
+        if (isBottom) {
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`relative flex min-h-[52px] flex-col items-center justify-center gap-0.5 rounded-xl px-0.5 py-2 text-[9px] font-semibold leading-tight transition active:scale-[0.97] sm:text-[10px] ${
+                isActive ? "text-brand-accent-light" : "text-brand-muted"
+              }`}
+            >
+              <span className="relative">
+                <Icon
+                  className={`h-5 w-5 ${isActive ? "text-brand-accent-light" : "text-brand-muted"}`}
+                  strokeWidth={isActive ? 2.4 : 2}
+                />
+                {showBadge && (
+                  <span
+                    className={`absolute -right-2 -top-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[9px] font-bold leading-none ${
+                      item.badgeKey === "nuove"
+                        ? "bg-brand-accent text-white"
+                        : "bg-brand-soft text-brand-bg"
+                    }`}
+                  >
+                    {badgeCount > 99 ? "99+" : badgeCount}
+                  </span>
+                )}
+              </span>
+              <span className="max-w-full truncate px-0.5">{item.shortLabel}</span>
+              {isActive && (
+                <span className="absolute inset-x-3 top-0 h-0.5 rounded-full bg-brand-accent" />
+              )}
+            </Link>
+          );
+        }
 
         return (
           <Link

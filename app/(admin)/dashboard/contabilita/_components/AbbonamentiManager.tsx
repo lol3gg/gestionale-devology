@@ -49,7 +49,84 @@ export function AbbonamentiManager({ abbonamenti }: { abbonamenti: AbbonamentoIt
 
   return (
     <div className="overflow-hidden rounded-brand-lg border border-brand-border bg-brand-elevated shadow-brand-md">
-      <div className="overflow-x-auto">
+      {/* Mobile cards */}
+      <div className="md:hidden">
+        {abbonamenti.length > 0 ? (
+          <ul className="divide-y divide-brand-border">
+            {abbonamenti.map((abbonamento) => {
+              const isRowPending = isPending && pendingId === abbonamento.id;
+              return (
+                <li
+                  key={abbonamento.id}
+                  className={`px-4 py-4 ${!abbonamento.attivo ? "opacity-55" : ""}`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-brand-text">{abbonamento.nome}</p>
+                      <p className="mt-1 text-xs text-brand-muted">
+                        {abbonamento.categoria ?? "Senza categoria"}
+                        {abbonamento.data_inizio
+                          ? ` · dal ${formatDataBreve(abbonamento.data_inizio)}`
+                          : ""}
+                      </p>
+                      <p className="mt-2 text-sm font-bold text-brand-text">
+                        {formatEuro(abbonamento.costo_mensile)}
+                        <span className="ml-1 text-xs font-medium text-brand-muted">/ mese</span>
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(abbonamento)}
+                      disabled={isRowPending}
+                      aria-label={`Elimina ${abbonamento.nome}`}
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-brand-border text-brand-soft transition active:bg-brand-accent/10 disabled:opacity-50"
+                    >
+                      {isRowPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
+                  <div className="mt-3 flex items-center justify-between gap-3">
+                    <span className="text-xs font-medium text-brand-muted">
+                      {abbonamento.attivo ? "Attivo" : "Disattivato"}
+                    </span>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={abbonamento.attivo}
+                      aria-label={abbonamento.attivo ? "Disattiva abbonamento" : "Attiva abbonamento"}
+                      onClick={() => handleToggle(abbonamento)}
+                      disabled={isRowPending}
+                      className={`relative inline-flex h-8 w-14 items-center rounded-full transition disabled:opacity-50 ${
+                        abbonamento.attivo ? "bg-emerald-500/70" : "bg-brand-border-strong"
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-6 w-6 transform rounded-full bg-white shadow transition ${
+                          abbonamento.attivo ? "translate-x-7" : "translate-x-1"
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <p className="px-4 py-10 text-center text-sm text-brand-muted">Nessun abbonamento registrato.</p>
+        )}
+        {abbonamenti.length > 0 && (
+          <div className="flex items-center justify-between border-t border-brand-border bg-brand-surface/60 px-4 py-3">
+            <span className="text-xs font-semibold text-brand-soft">Totale mensile attivi</span>
+            <span className="text-sm font-bold text-brand-text">{formatEuro(totaleMensile)}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Desktop table */}
+      <div className="hidden overflow-x-auto md:block">
         <table className="min-w-full divide-y divide-brand-border">
           <thead className="bg-brand-surface/60">
             <tr>

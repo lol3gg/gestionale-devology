@@ -174,7 +174,7 @@ export function DashboardOverview({
             placeholder="Cerca per nome, cognome o azienda..."
             value={searchInput}
             onChange={(event) => setSearchInput(event.target.value)}
-            className="w-full rounded-xl border border-brand-border-strong bg-brand-surface py-2.5 pl-9 pr-9 text-sm text-brand-text placeholder:text-brand-muted shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-accent"
+            className="w-full rounded-xl border border-brand-border-strong bg-brand-surface py-3 pl-9 pr-9 text-base text-brand-text placeholder:text-brand-muted shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-accent sm:py-2.5 sm:text-sm"
           />
           {searchInput && (
             <button
@@ -195,7 +195,7 @@ export function DashboardOverview({
           <select
             value={tipo}
             onChange={handleTipoProgettoSelectChange}
-            className="w-full rounded-xl border border-brand-border-strong bg-brand-surface px-3 py-2.5 text-sm text-brand-text shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-accent sm:w-56"
+            className="w-full rounded-xl border border-brand-border-strong bg-brand-surface px-3 py-3 text-base text-brand-text shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-accent sm:w-56 sm:py-2.5 sm:text-sm"
           >
             <option value="">Tutti i tipi di progetto</option>
             {TIPO_PROGETTO_OPTIONS.map((option) => (
@@ -208,7 +208,7 @@ export function DashboardOverview({
           <select
             value={stato}
             onChange={handleStatoSelectChange}
-            className="w-full rounded-xl border border-brand-border-strong bg-brand-surface px-3 py-2.5 text-sm text-brand-text shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-accent sm:w-56"
+            className="w-full rounded-xl border border-brand-border-strong bg-brand-surface px-3 py-3 text-base text-brand-text shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-accent sm:w-56 sm:py-2.5 sm:text-sm"
           >
             <option value="">Tutti gli stati</option>
             {STATO_OPTIONS.filter((option) => option.value !== "archiviato").map((option) => (

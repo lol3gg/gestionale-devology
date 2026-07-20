@@ -8,7 +8,7 @@ import { createMovimento } from "../actions";
 type RichiestaOption = { id: string; nome: string; cognome: string };
 
 const INPUT_CLASSES =
-  "w-full rounded-lg border border-brand-border-strong bg-brand-surface px-3 py-2 text-sm text-brand-text placeholder:text-brand-muted shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-accent";
+  "w-full rounded-lg border border-brand-border-strong bg-brand-surface px-3 py-3 text-base text-brand-text placeholder:text-brand-muted shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-accent sm:py-2 sm:text-sm";
 const LABEL_CLASSES = "mb-1 block text-xs font-medium text-brand-soft";
 
 function todayIsoDate() {

@@ -46,13 +46,13 @@ export function PaginazioneRichieste({
         {canPrev ? (
           <Link
             href={prevHref}
-            className="inline-flex items-center gap-1 rounded-full border border-brand-border bg-brand-elevated px-3 py-1.5 text-xs font-semibold text-brand-soft transition hover:border-brand-accent/40 hover:text-brand-accent-light"
+            className="inline-flex min-h-10 items-center gap-1 rounded-full border border-brand-border bg-brand-elevated px-4 py-2 text-xs font-semibold text-brand-soft transition hover:border-brand-accent/40 hover:text-brand-accent-light"
           >
             <ChevronLeft className="h-3.5 w-3.5" />
             Precedente
           </Link>
         ) : (
-          <span className="inline-flex cursor-not-allowed items-center gap-1 rounded-full border border-brand-border/60 bg-brand-elevated/50 px-3 py-1.5 text-xs font-semibold text-brand-muted opacity-50">
+          <span className="inline-flex min-h-10 cursor-not-allowed items-center gap-1 rounded-full border border-brand-border/60 bg-brand-elevated/50 px-4 py-2 text-xs font-semibold text-brand-muted opacity-50">
             <ChevronLeft className="h-3.5 w-3.5" />
             Precedente
           </span>
@@ -60,13 +60,13 @@ export function PaginazioneRichieste({
         {canNext ? (
           <Link
             href={nextHref}
-            className="inline-flex items-center gap-1 rounded-full border border-brand-border bg-brand-elevated px-3 py-1.5 text-xs font-semibold text-brand-soft transition hover:border-brand-accent/40 hover:text-brand-accent-light"
+            className="inline-flex min-h-10 items-center gap-1 rounded-full border border-brand-border bg-brand-elevated px-4 py-2 text-xs font-semibold text-brand-soft transition hover:border-brand-accent/40 hover:text-brand-accent-light"
           >
             Successiva
             <ChevronRight className="h-3.5 w-3.5" />
           </Link>
         ) : (
-          <span className="inline-flex cursor-not-allowed items-center gap-1 rounded-full border border-brand-border/60 bg-brand-elevated/50 px-3 py-1.5 text-xs font-semibold text-brand-muted opacity-50">
+          <span className="inline-flex min-h-10 cursor-not-allowed items-center gap-1 rounded-full border border-brand-border/60 bg-brand-elevated/50 px-4 py-2 text-xs font-semibold text-brand-muted opacity-50">
             Successiva
             <ChevronRight className="h-3.5 w-3.5" />
           </span>

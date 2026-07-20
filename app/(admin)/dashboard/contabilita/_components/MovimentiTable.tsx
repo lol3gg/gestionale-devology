@@ -34,6 +34,17 @@ function TipoBadge({ tipo }: { tipo: string }) {
   );
 }
 
+function EmptyState() {
+  return (
+    <div className="flex flex-col items-center gap-2 px-4 py-16 text-center">
+      <span className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-surface text-brand-muted ring-1 ring-inset ring-brand-border">
+        <SearchX className="h-5 w-5" />
+      </span>
+      <p className="text-sm font-medium text-brand-soft">Nessun movimento in questo periodo.</p>
+    </div>
+  );
+}
+
 export function MovimentiTable({ movimenti }: { movimenti: MovimentoItem[] }) {
   const [isPending, startTransition] = useTransition();
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -52,7 +63,66 @@ export function MovimentiTable({ movimenti }: { movimenti: MovimentoItem[] }) {
 
   return (
     <div className="overflow-hidden rounded-brand-lg border border-brand-border bg-brand-elevated shadow-brand-md">
-      <div className="overflow-x-auto">
+      {/* Mobile cards */}
+      <div className="md:hidden">
+        {movimenti.length > 0 ? (
+          <ul className="divide-y divide-brand-border">
+            {movimenti.map((movimento) => (
+              <li key={movimento.id} className="px-4 py-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <TipoBadge tipo={movimento.tipo} />
+                      <span className="text-xs text-brand-muted">{formatDataBreve(movimento.data)}</span>
+                    </div>
+                    <p className="mt-2 text-sm font-semibold text-brand-text">{movimento.descrizione}</p>
+                    <p className="mt-1 text-xs text-brand-muted">{getCategoriaLabel(movimento.categoria)}</p>
+                    {movimento.richiesta && (
+                      <Link
+                        href={`/dashboard/${movimento.richiesta.id}`}
+                        className="mt-1 inline-block text-xs font-medium text-brand-accent-light"
+                      >
+                        {movimento.richiesta.nome} {movimento.richiesta.cognome}
+                      </Link>
+                    )}
+                    {movimento.note && (
+                      <p className="mt-1 text-xs text-brand-muted">{movimento.note}</p>
+                    )}
+                  </div>
+                  <div className="flex shrink-0 flex-col items-end gap-2">
+                    <span
+                      className={`text-sm font-bold ${
+                        movimento.tipo === "entrata" ? "text-emerald-300" : "text-brand-accent-light"
+                      }`}
+                    >
+                      {movimento.tipo === "entrata" ? "+" : "-"}
+                      {formatEuro(movimento.importo)}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(movimento)}
+                      disabled={isPending && deletingId === movimento.id}
+                      aria-label={`Elimina ${movimento.descrizione}`}
+                      className="flex h-10 w-10 items-center justify-center rounded-xl border border-brand-border text-brand-soft transition active:bg-brand-accent/10 disabled:opacity-50"
+                    >
+                      {isPending && deletingId === movimento.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <EmptyState />
+        )}
+      </div>
+
+      {/* Desktop table */}
+      <div className="hidden overflow-x-auto md:block">
         <table className="min-w-full divide-y divide-brand-border">
           <thead className="bg-brand-surface/60">
             <tr>
@@ -133,13 +203,8 @@ export function MovimentiTable({ movimenti }: { movimenti: MovimentoItem[] }) {
               ))
             ) : (
               <tr>
-                <td colSpan={7} className="px-4 py-16 text-center">
-                  <div className="flex flex-col items-center gap-2">
-                    <span className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-surface text-brand-muted ring-1 ring-inset ring-brand-border">
-                      <SearchX className="h-5 w-5" />
-                    </span>
-                    <p className="text-sm font-medium text-brand-soft">Nessun movimento in questo mese.</p>
-                  </div>
+                <td colSpan={7}>
+                  <EmptyState />
                 </td>
               </tr>
             )}

@@ -34,16 +34,16 @@ export function StatoSelect({ richiestaId, statoIniziale }: StatoSelectProps) {
   }
 
   return (
-    <div className="flex flex-col items-end gap-1.5">
+    <div className="flex w-full flex-col gap-1.5 sm:w-auto sm:items-end">
       <span className="text-xs font-medium uppercase tracking-wide text-brand-muted">
         Stato richiesta
       </span>
-      <div className="relative">
+      <div className="relative w-full sm:w-auto">
         <select
           value={stato}
           onChange={handleChange}
           disabled={isSaving}
-          className="appearance-none rounded-xl border border-brand-border-strong bg-brand-surface px-3.5 py-2.5 pr-9 text-sm font-semibold text-brand-text shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-accent disabled:opacity-60"
+          className="w-full appearance-none rounded-xl border border-brand-border-strong bg-brand-surface px-3.5 py-3 pr-9 text-sm font-semibold text-brand-text shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-accent disabled:opacity-60 sm:w-auto sm:py-2.5"
         >
           {STATO_OPTIONS.map((option) => (
             <option key={option.value} value={option.value}>

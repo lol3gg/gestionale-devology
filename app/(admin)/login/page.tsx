@@ -75,7 +75,7 @@ export default function LoginPage() {
               required
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              className="w-full rounded-md border border-brand-border-strong bg-brand-surface px-3 py-2 text-sm text-brand-text shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-accent"
+              className="w-full rounded-md border border-brand-border-strong bg-brand-surface px-3 py-3 text-base text-brand-text shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-accent sm:py-2 sm:text-sm"
             />
           </div>
 
@@ -91,14 +91,14 @@ export default function LoginPage() {
               required
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              className="w-full rounded-md border border-brand-border-strong bg-brand-surface px-3 py-2 text-sm text-brand-text shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-accent"
+              className="w-full rounded-md border border-brand-border-strong bg-brand-surface px-3 py-3 text-base text-brand-text shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-accent sm:py-2 sm:text-sm"
             />
           </div>
 
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full rounded-full bg-gradient-to-b from-[#e01431] via-brand-accent to-[#b00f26] px-4 py-2.5 text-sm font-semibold text-white shadow-brand-md transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-full bg-gradient-to-b from-[#e01431] via-brand-accent to-[#b00f26] px-4 py-3.5 text-sm font-semibold text-white shadow-brand-md transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60 sm:py-2.5"
           >
             {isSubmitting ? "Accesso in corso..." : "Accedi"}
           </button>

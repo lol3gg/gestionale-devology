@@ -79,7 +79,7 @@ export default async function ArchivioPage({ searchParams }: ArchivioPageProps) 
               Pannello Admin
             </p>
             <h1 className="mt-1 text-2xl font-extrabold tracking-[-0.02em] text-brand-text sm:text-3xl">
-              Archivio
+              Archivio cliente
             </h1>
             <p className="mt-1 max-w-2xl text-sm text-brand-muted">
               Qui trovi le richieste archiviate: non sono eliminate, restano consultabili. Puoi

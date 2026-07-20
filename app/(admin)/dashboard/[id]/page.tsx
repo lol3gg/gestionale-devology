@@ -46,7 +46,7 @@ export default async function RichiestaDetailPage({ params }: RichiestaDetailPag
       .order("created_at", { ascending: true }),
     supabase
       .from("preventivi")
-      .select("id, numero_preventivo, data_invio, nome_file, url_file, created_at")
+      .select("id, numero_preventivo, data_invio, nome_file, url_file, created_at, prezzo, stato")
       .eq("richiesta_id", params.id)
       .order("data_invio", { ascending: false }),
   ]);
@@ -66,6 +66,8 @@ export default async function RichiestaDetailPage({ params }: RichiestaDetailPag
   const preventivi: PreventivoItem[] = await Promise.all(
     (preventiviRows ?? []).map(async (preventivo) => ({
       ...preventivo,
+      prezzo: preventivo.prezzo != null ? Number(preventivo.prezzo) : null,
+      stato: preventivo.stato ?? "inviato",
       downloadUrl: await regenerateSignedUrl(
         supabase,
         PREVENTIVI_BUCKET,
@@ -91,16 +93,16 @@ export default async function RichiestaDetailPage({ params }: RichiestaDetailPag
         Torna alla dashboard
       </Link>
 
-      <div className="rounded-brand-lg border border-brand-border bg-brand-elevated p-6 shadow-brand-md">
+      <div className="rounded-brand-lg border border-brand-border bg-brand-elevated p-4 shadow-brand-md sm:p-6">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex items-start gap-4">
+          <div className="flex items-start gap-3 sm:gap-4">
             <span
-              className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-lg font-bold ring-1 ring-inset ${avatarClasses}`}
+              className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-base font-bold ring-1 ring-inset sm:h-14 sm:w-14 sm:text-lg ${avatarClasses}`}
             >
               {getInitials(richiesta.nome, richiesta.cognome)}
             </span>
-            <div>
-              <h1 className="text-2xl font-extrabold tracking-[-0.02em] text-brand-text">
+            <div className="min-w-0">
+              <h1 className="break-words text-xl font-extrabold tracking-[-0.02em] text-brand-text sm:text-2xl">
                 {nomeCompleto}
               </h1>
               <p className="mt-1 flex items-center gap-1.5 text-sm text-brand-muted">
@@ -148,7 +150,7 @@ export default async function RichiestaDetailPage({ params }: RichiestaDetailPag
             }}
           />
 
-          <section className="rounded-brand-lg border border-brand-border bg-brand-elevated p-6 shadow-brand-md">
+          <section className="rounded-brand-lg border border-brand-border bg-brand-elevated p-4 shadow-brand-md sm:p-6">
             <h2 className="flex items-center gap-2 text-base font-semibold text-brand-text">
               <Paperclip className="h-4 w-4 text-brand-accent-light" />
               Allegati

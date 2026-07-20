@@ -47,7 +47,7 @@ export function RiepilogoCards({
   ];
 
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
       {cards.map((card) => {
         const Icon = card.icon;
         const tone = TONE_CLASSES[card.tone];
@@ -55,16 +55,16 @@ export function RiepilogoCards({
         return (
           <div
             key={card.label}
-            className="rounded-brand-lg border border-brand-border bg-brand-elevated p-5 shadow-brand-md"
+            className="rounded-brand-lg border border-brand-border bg-brand-elevated p-3.5 shadow-brand-md sm:p-5"
           >
-            <span className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ring-1 ring-inset ${tone.icon}`}>
-              <Icon className="h-[18px] w-[18px]" strokeWidth={2.2} />
+            <span className={`inline-flex h-8 w-8 items-center justify-center rounded-xl ring-1 ring-inset sm:h-9 sm:w-9 ${tone.icon}`}>
+              <Icon className="h-4 w-4 sm:h-[18px] sm:w-[18px]" strokeWidth={2.2} />
             </span>
-            <p className={`mt-3.5 text-2xl font-extrabold tracking-[-0.02em] sm:text-3xl ${tone.value}`}>
+            <p className={`mt-2.5 text-lg font-extrabold tracking-[-0.02em] sm:mt-3.5 sm:text-3xl ${tone.value}`}>
               {formatEuro(card.value)}
             </p>
-            <p className="mt-1 text-xs font-medium text-brand-muted">{card.label}</p>
-            {card.hint && <p className="mt-0.5 text-[11px] text-brand-muted/70">{card.hint}</p>}
+            <p className="mt-1 text-[11px] font-medium leading-snug text-brand-muted sm:text-xs">{card.label}</p>
+            {card.hint && <p className="mt-0.5 hidden text-[11px] text-brand-muted/70 sm:block">{card.hint}</p>}
           </div>
         );
       })}

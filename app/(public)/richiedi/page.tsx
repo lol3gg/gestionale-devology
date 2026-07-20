@@ -69,7 +69,7 @@ const SIGNED_URL_EXPIRY_SECONDS = 60 * 60 * 24 * 365 * 10; // 10 anni
 const FORM_SHELL = "mx-auto w-full max-w-3xl min-w-0";
 
 const INPUT_BASE =
-  "w-full min-w-0 rounded-md border bg-brand-surface px-3 py-2 text-sm text-brand-text shadow-sm placeholder:text-brand-muted focus:outline-none focus:ring-2 focus:ring-brand-accent";
+  "w-full min-w-0 rounded-md border bg-brand-surface px-3 py-3 text-base text-brand-text shadow-sm placeholder:text-brand-muted focus:outline-none focus:ring-2 focus:ring-brand-accent sm:py-2 sm:text-sm";
 
 function formatFileSize(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;

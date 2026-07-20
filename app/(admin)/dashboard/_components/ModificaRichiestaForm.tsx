@@ -63,7 +63,7 @@ type FormState = {
 };
 
 const INPUT_BASE =
-  "w-full rounded-md border bg-brand-surface px-3 py-2 text-sm text-brand-text shadow-sm placeholder:text-brand-muted focus:outline-none focus:ring-2 focus:ring-brand-accent";
+  "w-full rounded-md border bg-brand-surface px-3 py-3 text-base text-brand-text shadow-sm placeholder:text-brand-muted focus:outline-none focus:ring-2 focus:ring-brand-accent sm:py-2 sm:text-sm";
 
 function toFormState(dati: RichiestaDatiIniziali): FormState {
   const flessibile = (dati.tempistiche ?? "").trim().toLowerCase() === "flessibile";
@@ -292,7 +292,7 @@ export function ModificaRichiestaForm({ richiesta }: ModificaRichiestaFormProps)
 
   if (!isEditing) {
     return (
-      <section className="rounded-brand-lg border border-brand-border bg-brand-elevated p-6 shadow-brand-md">
+      <section className="rounded-brand-lg border border-brand-border bg-brand-elevated p-4 shadow-brand-md sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-base font-semibold text-brand-text">Dettagli richiesta</h2>
           <div className="flex items-center gap-2">
@@ -388,7 +388,7 @@ export function ModificaRichiestaForm({ richiesta }: ModificaRichiestaFormProps)
   }
 
   return (
-    <section className="rounded-brand-lg border border-brand-border bg-brand-elevated p-6 shadow-brand-md">
+    <section className="rounded-brand-lg border border-brand-border bg-brand-elevated p-4 shadow-brand-md sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-base font-semibold text-brand-text">Modifica dati richiesta</h2>
         <button

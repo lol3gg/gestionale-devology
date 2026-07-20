@@ -29,6 +29,20 @@ type RichiesteTableProps = {
 
 type BudgetSortDirection = "desc" | "asc" | null;
 
+function EmptyState({ totale }: { totale: number }) {
+  return (
+    <div className="flex flex-col items-center gap-2 px-4 py-16 text-center">
+      <span className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-surface text-brand-muted ring-1 ring-inset ring-brand-border">
+        <SearchX className="h-5 w-5" />
+      </span>
+      <p className="text-sm font-medium text-brand-soft">Nessuna richiesta trovata.</p>
+      {totale > 0 && (
+        <p className="text-xs text-brand-muted">Prova a modificare la ricerca o i filtri applicati.</p>
+      )}
+    </div>
+  );
+}
+
 export function RichiesteTable({ richieste, totale, bare = false }: RichiesteTableProps) {
   const router = useRouter();
   const [budgetSort, setBudgetSort] = useState<BudgetSortDirection>(null);
@@ -49,6 +63,10 @@ export function RichiesteTable({ richieste, totale, bare = false }: RichiesteTab
 
   const BudgetSortIcon = budgetSort === "desc" ? ArrowDown : budgetSort === "asc" ? ArrowUp : ArrowUpDown;
 
+  function openRichiesta(id: string) {
+    router.push(`/dashboard/${id}`);
+  }
+
   return (
     <div
       className={
@@ -57,7 +75,79 @@ export function RichiesteTable({ richieste, totale, bare = false }: RichiesteTab
           : "overflow-hidden rounded-brand-lg border border-brand-border bg-brand-elevated shadow-brand-md"
       }
     >
-      <div className="overflow-x-auto">
+      {/* Mobile: card list */}
+      <div className="md:hidden">
+        <div className="flex items-center justify-between border-b border-brand-border bg-brand-surface/60 px-4 py-3">
+          <button
+            type="button"
+            onClick={toggleBudgetSort}
+            className="inline-flex min-h-10 items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-brand-muted"
+          >
+            Ordina per budget
+            <BudgetSortIcon className={`h-3.5 w-3.5 ${budgetSort ? "text-brand-accent-light" : ""}`} />
+          </button>
+          <span className="text-xs text-brand-muted">{righeOrdinate.length} risultati</span>
+        </div>
+
+        {righeOrdinate.length > 0 ? (
+          <ul className="divide-y divide-brand-border">
+            {righeOrdinate.map((richiesta) => {
+              const nomeCompleto = `${richiesta.nome} ${richiesta.cognome}`.trim();
+              const avatarClasses = getAvatarClasses(richiesta.id);
+
+              return (
+                <li key={richiesta.id}>
+                  <button
+                    type="button"
+                    onClick={() => openRichiesta(richiesta.id)}
+                    className="flex w-full items-start gap-3 px-4 py-3.5 text-left transition active:bg-brand-accent/10"
+                  >
+                    <span
+                      className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-bold ring-1 ring-inset ${avatarClasses}`}
+                    >
+                      {getInitials(richiesta.nome, richiesta.cognome)}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-start justify-between gap-2">
+                        <span className="truncate text-sm font-semibold text-brand-text">{nomeCompleto}</span>
+                        <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-brand-muted" />
+                      </span>
+                      <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-brand-muted">
+                        <span className="inline-flex items-center gap-1">
+                          {richiesta.tipo_cliente === "azienda" ? (
+                            <Building2 className="h-3 w-3" />
+                          ) : (
+                            <User className="h-3 w-3" />
+                          )}
+                          {richiesta.tipo_cliente === "azienda"
+                            ? richiesta.nome_azienda || "Azienda"
+                            : "Privato"}
+                        </span>
+                        <span>·</span>
+                        <span>{formatDataBreve(richiesta.created_at)}</span>
+                      </span>
+                      <span className="mt-2 flex flex-wrap items-center gap-2">
+                        <StatoBadge stato={richiesta.stato} />
+                        <span className="text-xs font-semibold text-brand-soft">
+                          {richiesta.budget != null ? formatEuro(richiesta.budget) : "Budget —"}
+                        </span>
+                        {richiesta.tipo_progetto && (
+                          <span className="truncate text-xs text-brand-muted">{richiesta.tipo_progetto}</span>
+                        )}
+                      </span>
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <EmptyState totale={totale} />
+        )}
+      </div>
+
+      {/* Desktop: tabella */}
+      <div className="hidden overflow-x-auto md:block">
         <table className="min-w-full divide-y divide-brand-border">
           <thead className="bg-brand-surface/60">
             <tr>
@@ -103,9 +193,9 @@ export function RichiesteTable({ richieste, totale, bare = false }: RichiesteTab
                     key={richiesta.id}
                     role="link"
                     tabIndex={0}
-                    onClick={() => router.push(`/dashboard/${richiesta.id}`)}
+                    onClick={() => openRichiesta(richiesta.id)}
                     onKeyDown={(event) => {
-                      if (event.key === "Enter") router.push(`/dashboard/${richiesta.id}`);
+                      if (event.key === "Enter") openRichiesta(richiesta.id);
                     }}
                     className="group cursor-pointer transition-colors hover:bg-brand-accent/5 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-brand-accent"
                   >
@@ -161,18 +251,8 @@ export function RichiesteTable({ richieste, totale, bare = false }: RichiesteTab
               })
             ) : (
               <tr>
-                <td colSpan={8} className="px-4 py-16 text-center">
-                  <div className="flex flex-col items-center gap-2">
-                    <span className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-surface text-brand-muted ring-1 ring-inset ring-brand-border">
-                      <SearchX className="h-5 w-5" />
-                    </span>
-                    <p className="text-sm font-medium text-brand-soft">Nessuna richiesta trovata.</p>
-                    {totale > 0 && (
-                      <p className="text-xs text-brand-muted">
-                        Prova a modificare la ricerca o i filtri applicati.
-                      </p>
-                    )}
-                  </div>
+                <td colSpan={8}>
+                  <EmptyState totale={totale} />
                 </td>
               </tr>
             )}

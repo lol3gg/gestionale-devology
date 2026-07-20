@@ -34,7 +34,7 @@ export function StatoStepper({ stato }: { stato: string }) {
                 {isDone ? <Check className="h-3.5 w-3.5" /> : index + 1}
               </div>
               <span
-                className={`hidden text-center text-[11px] font-medium sm:block ${
+                className={`max-w-[4.5rem] text-center text-[9px] font-medium leading-tight sm:max-w-none sm:text-[11px] ${
                   isCurrent ? "text-brand-text" : isDone ? "text-brand-soft" : "text-brand-muted"
                 }`}
               >
