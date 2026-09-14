@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Archive, FileText, Inbox, Megaphone, Users, Wallet } from "lucide-react";
+import { Archive, CalendarDays, FileText, Inbox, Megaphone, Users, Wallet } from "lucide-react";
 
 /**
  * Sezioni "di primo livello" note, usate per capire se la rotta corrente
  * (es. "/dashboard/xyz") appartiene a "Richieste" (una richiesta specifica)
  * oppure a una sezione dedicata.
  */
-const SEZIONI_DEDICATE = ["preventivi", "contabilita", "archivio", "prontopro", "collaboratori"];
+const SEZIONI_DEDICATE = ["preventivi", "contabilita", "archivio", "prontopro", "collaboratori", "calendario"];
 
 const NAV_ITEMS = [
   {
@@ -38,6 +38,14 @@ const NAV_ITEMS = [
     icon: FileText,
     badgeKey: null,
     isActive: (pathname: string) => pathname.startsWith("/dashboard/preventivi"),
+  },
+  {
+    href: "/dashboard/calendario",
+    label: "Calendario",
+    shortLabel: "Call",
+    icon: CalendarDays,
+    badgeKey: null,
+    isActive: (pathname: string) => pathname.startsWith("/dashboard/calendario"),
   },
   {
     href: "/dashboard/contabilita",
@@ -87,7 +95,7 @@ export function DashboardNav({
     <nav
       className={
         isBottom
-          ? "grid grid-cols-6 gap-0 px-0.5 pb-safe pt-1"
+          ? "grid grid-cols-7 gap-0 px-0.5 pb-safe pt-1"
           : isMobile
             ? "flex items-center gap-2 overflow-x-auto px-4 py-2.5"
             : isIconOnly

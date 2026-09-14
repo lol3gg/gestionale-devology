@@ -291,3 +291,29 @@ on collaboratore_lavori for all
 to authenticated
 using (true)
 with check (true);
+
+-- =============================================================================
+-- Sezione "Calendario" (migrazione "create_call_appuntamenti").
+-- Call da 30 minuti: azienda obbligatoria, email/cellulare/attività facoltativi.
+-- =============================================================================
+
+create table call_appuntamenti (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamp with time zone default now(),
+  giorno date not null,
+  ora time not null,
+  azienda text not null,
+  email text,
+  telefono text,
+  attivita text,
+  constraint call_appuntamenti_slot_30
+    check (extract(minute from ora) in (0, 30))
+);
+
+alter table call_appuntamenti enable row level security;
+
+create policy "Solo autenticati gestiscono call_appuntamenti"
+on call_appuntamenti for all
+to authenticated
+using (true)
+with check (true);
