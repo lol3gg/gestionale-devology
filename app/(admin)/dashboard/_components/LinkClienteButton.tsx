@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Check, Link2 } from "lucide-react";
+import { getPublicOrigin } from "@/lib/site";
 
 type LinkClienteButtonProps = {
   variant?: "sidebar" | "compact";
@@ -16,7 +17,7 @@ export function LinkClienteButton({ variant = "sidebar" }: LinkClienteButtonProp
   const [copiato, setCopiato] = useState(false);
 
   async function copiaLink() {
-    const link = `${window.location.origin}/richiedi`;
+    const link = `${getPublicOrigin()}/richiedi`;
 
     try {
       await navigator.clipboard.writeText(link);

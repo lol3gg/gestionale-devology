@@ -3,6 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import type { CategoriaMovimento, TipoMovimento } from "@/lib/contabilita/categorie";
+import {
+  insertCanone,
+  patchCanoneAttivo,
+  removeCanone,
+  type NuovoCanoneInput,
+} from "@/lib/contabilita/canoni";
 
 export type NuovoMovimentoInput = {
   tipo: TipoMovimento;
@@ -94,5 +100,20 @@ export async function deleteAbbonamento(id: string) {
     throw new Error(`Impossibile eliminare l'abbonamento: ${error.message}`);
   }
 
+  revalidatePath("/dashboard/contabilita");
+}
+
+export async function createCanone(input: NuovoCanoneInput) {
+  await insertCanone(createClient(), input);
+  revalidatePath("/dashboard/contabilita");
+}
+
+export async function toggleCanone(id: string, attivo: boolean) {
+  await patchCanoneAttivo(createClient(), id, attivo);
+  revalidatePath("/dashboard/contabilita");
+}
+
+export async function deleteCanone(id: string) {
+  await removeCanone(createClient(), id);
   revalidatePath("/dashboard/contabilita");
 }

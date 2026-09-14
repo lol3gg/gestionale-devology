@@ -48,7 +48,7 @@ export default async function CalendarioPage({
           Calendario
         </h1>
         <p className="mt-1 text-sm text-brand-muted">
-          Fasce ogni 10 minuti, dalle 04:00 alle 19:30. Una call occupa 30 minuti e chiude gli slot dopo:
+          Fasce ogni 10 minuti, dalle 16:00 alle 19:30. Una call occupa 30 minuti e chiude gli slot dopo:
           se serve, in modifica puoi accorciare o allungare. Serve il nome dell&apos;azienda; email,
           cellulare e attività sono facoltativi.
         </p>

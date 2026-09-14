@@ -34,6 +34,7 @@ import {
   updateCollaboratore,
   updateLavoroPercentuale,
 } from "../actions";
+import { CopiaLinkPortaleButton } from "./CopiaLinkPortaleButton";
 
 const INPUT =
   "w-full rounded-lg border border-brand-border-strong bg-brand-surface px-3 py-2 text-sm text-brand-text placeholder:text-brand-muted shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-accent";
@@ -219,6 +220,11 @@ function CollaboratoreCard({
             value={formatEuro(stats.daMandare)}
             highlight={stats.daMandare > 0}
           />
+        </div>
+
+        <div className="flex flex-col gap-2 rounded-xl border border-brand-border bg-brand-surface px-3 py-3">
+          <p className="text-xs text-brand-muted">Link personale da mandare a {collaboratore.nome}</p>
+          <CopiaLinkPortaleButton token={collaboratore.token} nome={collaboratore.nome} />
         </div>
       </div>
 

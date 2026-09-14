@@ -34,18 +34,33 @@ function TipoBadge({ tipo }: { tipo: string }) {
   );
 }
 
-function EmptyState() {
+function EmptyState({ altriMesi }: { altriMesi?: boolean }) {
   return (
     <div className="flex flex-col items-center gap-2 px-4 py-16 text-center">
       <span className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-surface text-brand-muted ring-1 ring-inset ring-brand-border">
         <SearchX className="h-5 w-5" />
       </span>
       <p className="text-sm font-medium text-brand-soft">Nessun movimento in questo periodo.</p>
+      {altriMesi && (
+        <p className="max-w-sm text-xs text-brand-muted">
+          I movimenti ci sono, ma in altri mesi. Apri{" "}
+          <Link href="/dashboard/contabilita?tipo=anno_corrente" className="font-semibold text-brand-accent-light underline">
+            Da inizio anno
+          </Link>{" "}
+          per vederli tutti.
+        </p>
+      )}
     </div>
   );
 }
 
-export function MovimentiTable({ movimenti }: { movimenti: MovimentoItem[] }) {
+export function MovimentiTable({
+  movimenti,
+  altriMesi,
+}: {
+  movimenti: MovimentoItem[];
+  altriMesi?: boolean;
+}) {
   const [isPending, startTransition] = useTransition();
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -117,7 +132,7 @@ export function MovimentiTable({ movimenti }: { movimenti: MovimentoItem[] }) {
             ))}
           </ul>
         ) : (
-          <EmptyState />
+          <EmptyState altriMesi={altriMesi} />
         )}
       </div>
 
@@ -204,7 +219,7 @@ export function MovimentiTable({ movimenti }: { movimenti: MovimentoItem[] }) {
             ) : (
               <tr>
                 <td colSpan={7}>
-                  <EmptyState />
+                  <EmptyState altriMesi={altriMesi} />
                 </td>
               </tr>
             )}

@@ -1,7 +1,7 @@
 export const TIMEZONE_ROMA = "Europe/Rome";
 
-/** Prima fascia prenotabile (04:00). */
-export const SLOT_INIZIO_MINUTI = 4 * 60;
+/** Prima fascia prenotabile (16:00, le 4 del pomeriggio). */
+export const SLOT_INIZIO_MINUTI = 16 * 60;
 /** Ultimo inizio fascia (19:30). */
 export const SLOT_FINE_MINUTI = 19 * 60 + 30;
 /** Passo della griglia. */

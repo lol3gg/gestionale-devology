@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { importoDovuto } from "@/lib/collaboratori/calcoli";
 import { generaTokenCollaboratore } from "@/lib/collaboratori/token";
+import { removeCollaboratoreToken, saveCollaboratoreToken } from "@/lib/collaboratori/portale";
 import type { TipoCollaboratore } from "@/lib/collaboratori/types";
 
 function revalidateCollaboratori() {
@@ -23,7 +24,7 @@ export type NuovoCollaboratoreInput = {
 
 export async function createCollaboratore(input: NuovoCollaboratoreInput) {
   const supabase = createClient();
-  const payload = {
+  const base = {
     nome: input.nome,
     tipo: input.tipo,
     contatto: input.contatto,
@@ -31,28 +32,34 @@ export async function createCollaboratore(input: NuovoCollaboratoreInput) {
     percentuale: input.percentuale,
     note: input.note,
     attivo: true,
-    token: generaTokenCollaboratore(),
-    link_attivo: true,
   };
-  let { error } = await supabase.from("collaboratori").insert(payload);
 
-  if (error && /token|link_attivo|schema cache|column/i.test(error.message)) {
-    const fallback = await supabase.from("collaboratori").insert({
-      nome: payload.nome,
-      tipo: payload.tipo,
-      contatto: payload.contatto,
-      iban: payload.iban,
-      percentuale: payload.percentuale,
-      note: payload.note,
-      attivo: true,
-    });
-    error = fallback.error;
+  const withToken = await supabase
+    .from("collaboratori")
+    .insert({ ...base, token: generaTokenCollaboratore(), link_attivo: true })
+    .select("id")
+    .single();
+
+  let id = withToken.data?.id ?? null;
+
+  if (withToken.error) {
+    if (!/token|link_attivo|schema cache|column/i.test(withToken.error.message)) {
+      throw new Error(`Impossibile salvare il collaboratore: ${withToken.error.message}`);
+    }
+    const fallback = await supabase.from("collaboratori").insert(base).select("id").single();
+    if (fallback.error || !fallback.data) {
+      throw new Error(`Impossibile salvare il collaboratore: ${fallback.error?.message ?? "errore sconosciuto"}`);
+    }
+    id = fallback.data.id;
   }
 
-  if (error) {
-    throw new Error(`Impossibile salvare il collaboratore: ${error.message}`);
+  if (id) {
+    try {
+      await saveCollaboratoreToken(id, generaTokenCollaboratore({ id, nome: input.nome }), true);
+    } catch {
+      // Il collaboratore è salvato: il token verrà generato al prossimo caricamento della pagina.
+    }
   }
-
   revalidateCollaboratori();
 }
 
@@ -78,6 +85,11 @@ export async function deleteCollaboratore(id: string) {
     throw new Error(`Impossibile eliminare il collaboratore: ${error.message}`);
   }
 
+  try {
+    await removeCollaboratoreToken(id);
+  } catch {
+    // Collaboratore già eliminato dalla tabella.
+  }
   revalidateCollaboratori();
 }
 

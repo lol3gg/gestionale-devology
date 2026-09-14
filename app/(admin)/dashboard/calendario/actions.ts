@@ -25,7 +25,7 @@ function normalizzaInput(input: CallAppuntamentoInput): CallActionResult | CallA
     return { ok: false, error: "Data non valida." };
   }
   if (!SLOT_ORE.includes(ora)) {
-    return { ok: false, error: "Orario non valido: le fasce sono ogni 10 minuti, dalle 04:00 alle 19:30." };
+    return { ok: false, error: "Orario non valido: le fasce sono ogni 10 minuti, dalle 16:00 alle 19:30." };
   }
   if (!CALL_DURATE.includes(durataMinuti as (typeof CALL_DURATE)[number])) {
     return { ok: false, error: "Durata non valida." };
