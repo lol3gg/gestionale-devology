@@ -1,11 +1,15 @@
 export const TIMEZONE_ROMA = "Europe/Rome";
 
-/** Prima fascia prenotabile (08:00). */
-export const SLOT_INIZIO_MINUTI = 8 * 60;
-/** Ultimo inizio fascia (20:30 → call 20:30–21:00). */
-export const SLOT_FINE_MINUTI = 20 * 60 + 30;
-export const SLOT_DURATA_MINUTI = 30;
-export const SLOT_ALTEZZA_PX = 44;
+/** Prima fascia prenotabile (04:00). */
+export const SLOT_INIZIO_MINUTI = 4 * 60;
+/** Ultimo inizio fascia (19:30). */
+export const SLOT_FINE_MINUTI = 19 * 60 + 30;
+/** Passo della griglia. */
+export const SLOT_PASSO_MINUTI = 10;
+/** Durata call di default: occupa 3 slot da 10 minuti. */
+export const CALL_DURATA_DEFAULT = 30;
+export const CALL_DURATE = [10, 20, 30, 40, 50, 60, 90, 120] as const;
+export const SLOT_ALTEZZA_PX = 22;
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -75,7 +79,7 @@ export function normalizzaOra(value: string | null | undefined): string {
 
 export function generaSlot(): string[] {
   const slots: string[] = [];
-  for (let minuti = SLOT_INIZIO_MINUTI; minuti <= SLOT_FINE_MINUTI; minuti += SLOT_DURATA_MINUTI) {
+  for (let minuti = SLOT_INIZIO_MINUTI; minuti <= SLOT_FINE_MINUTI; minuti += SLOT_PASSO_MINUTI) {
     slots.push(minutiToOra(minuti));
   }
   return slots;
@@ -117,8 +121,8 @@ export function minutiCorrentiRoma(): number {
 
 export function arrotondaAlProssimoSlot(minuti: number): string {
   const clamped = Math.max(SLOT_INIZIO_MINUTI, Math.min(SLOT_FINE_MINUTI, minuti));
-  const resto = clamped % SLOT_DURATA_MINUTI;
-  const next = resto === 0 ? clamped : clamped + (SLOT_DURATA_MINUTI - resto);
+  const resto = clamped % SLOT_PASSO_MINUTI;
+  const next = resto === 0 ? clamped : clamped + (SLOT_PASSO_MINUTI - resto);
   const limited = Math.min(SLOT_FINE_MINUTI, next);
   return minutiToOra(limited);
 }
@@ -126,5 +130,44 @@ export function arrotondaAlProssimoSlot(minuti: number): string {
 export function isSlotPassato(giorno: string, ora: string, oggi: string, minutiOra: number): boolean {
   if (giorno < oggi) return true;
   if (giorno > oggi) return false;
-  return oraToMinuti(ora) + SLOT_DURATA_MINUTI <= minutiOra;
+  return oraToMinuti(ora) + SLOT_PASSO_MINUTI <= minutiOra;
+}
+
+export function durataCall(durataMinuti: number | null | undefined): number {
+  const n = Number(durataMinuti);
+  if (!Number.isFinite(n) || n < SLOT_PASSO_MINUTI) return CALL_DURATA_DEFAULT;
+  return Math.round(n / SLOT_PASSO_MINUTI) * SLOT_PASSO_MINUTI;
+}
+
+export function oraFineCall(ora: string, durataMinuti: number): string {
+  return minutiToOra(oraToMinuti(ora) + durataCall(durataMinuti));
+}
+
+export function slotSpan(durataMinuti: number): number {
+  return Math.max(1, Math.ceil(durataCall(durataMinuti) / SLOT_PASSO_MINUTI));
+}
+
+/** Quanti slot da 10 minuti restano visibili in giornata (non oltre le 19:30). */
+export function slotSpanVisibile(ora: string, durataMinuti: number): number {
+  const startIdx = SLOT_ORE.indexOf(normalizzaOra(ora));
+  if (startIdx < 0) return 1;
+  return Math.min(slotSpan(durataMinuti), SLOT_ORE.length - startIdx);
+}
+
+/** True se lo slot da 10 minuti cade dentro la call (inizio incluso, fine esclusa). */
+export function callCopreSlot(giornoCall: string, oraCall: string, durataMinuti: number, giorno: string, ora: string) {
+  if (giornoCall !== giorno) return false;
+  const start = oraToMinuti(oraCall);
+  const end = start + durataCall(durataMinuti);
+  const slot = oraToMinuti(ora);
+  return slot >= start && slot < end;
+}
+
+export function intervalliSiSovrappongono(
+  startA: number,
+  durataA: number,
+  startB: number,
+  durataB: number
+) {
+  return startA < startB + durataB && startB < startA + durataA;
 }

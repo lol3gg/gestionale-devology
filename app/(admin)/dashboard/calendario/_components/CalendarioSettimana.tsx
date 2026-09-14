@@ -4,19 +4,27 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { CalendarPlus, ChevronLeft, ChevronRight, Mail, Phone } from "lucide-react";
 import {
+  CALL_DURATA_DEFAULT,
   GIORNI_SETT_BREVI,
   SLOT_ALTEZZA_PX,
   SLOT_FINE_MINUTI,
   SLOT_INIZIO_MINUTI,
   SLOT_ORE,
+  SLOT_PASSO_MINUTI,
   addGiorni,
   arrotondaAlProssimoSlot,
+  callCopreSlot,
+  durataCall,
   formatGiornoCompleto,
   formatGiornoCorto,
+  intervalliSiSovrappongono,
   isSlotPassato,
   lunediDellaSettimana,
   minutiCorrentiRoma,
   normalizzaOra,
+  oraFineCall,
+  oraToMinuti,
+  slotSpanVisibile,
 } from "@/lib/calendario/date";
 import type { CallAppuntamento } from "@/lib/calendario/types";
 import { CallFormModal, callToDraft, type CallFormDraft } from "./CallFormModal";
@@ -46,10 +54,14 @@ export function CalendarioSettimana({ lunedi, oggi, calls }: CalendarioSettimana
     return () => window.clearInterval(id);
   }, []);
 
-  const bySlot = useMemo(() => {
+  const occupancy = useMemo(() => {
     const map = new Map<string, CallAppuntamento>();
     for (const call of calls) {
-      map.set(slotKey(call.giorno, call.ora), call);
+      for (const ora of SLOT_ORE) {
+        if (callCopreSlot(call.giorno, call.ora, call.durataMinuti, call.giorno, ora)) {
+          map.set(slotKey(call.giorno, ora), call);
+        }
+      }
     }
     return map;
   }, [calls]);
@@ -57,11 +69,22 @@ export function CalendarioSettimana({ lunedi, oggi, calls }: CalendarioSettimana
   const settimanaPrec = addGiorni(lunedi, -7);
   const settimanaSucc = addGiorni(lunedi, 7);
   const lunediOggi = lunediDellaSettimana(oggi);
+  const rowTemplate = { gridTemplateRows: `repeat(${SLOT_ORE.length}, ${SLOT_ALTEZZA_PX}px)` };
+
+  function puoIniziare(giorno: string, ora: string, durataMinuti = CALL_DURATA_DEFAULT) {
+    const start = oraToMinuti(ora);
+    const durata = durataCall(durataMinuti);
+    return !calls.some((call) => {
+      if (call.giorno !== giorno) return false;
+      return intervalliSiSovrappongono(start, durata, oraToMinuti(call.ora), durataCall(call.durataMinuti));
+    });
+  }
 
   function openNuova(giorno: string, ora: string) {
     setDraft({
       giorno,
       ora,
+      durataMinuti: CALL_DURATA_DEFAULT,
       azienda: "",
       email: "",
       telefono: "",
@@ -76,21 +99,17 @@ export function CalendarioSettimana({ lunedi, oggi, calls }: CalendarioSettimana
       : giorni.includes(oggi)
         ? oggi
         : selectedDay;
-    const occupati = new Set(
-      calls.filter((call) => call.giorno === giorno).map((call) => normalizzaOra(call.ora))
-    );
-    const partenza =
-      giorno === oggi ? arrotondaAlProssimoSlot(nowMinuti) : "09:00";
+    const partenza = giorno === oggi ? arrotondaAlProssimoSlot(nowMinuti) : "09:00";
     const startIndex = Math.max(0, SLOT_ORE.indexOf(partenza));
     const libero =
-      SLOT_ORE.slice(startIndex).find((slot) => !occupati.has(slot)) ??
-      SLOT_ORE.find((slot) => !occupati.has(slot));
+      SLOT_ORE.slice(startIndex).find((slot) => puoIniziare(giorno, slot)) ??
+      SLOT_ORE.find((slot) => !occupancy.has(slotKey(giorno, slot)));
     openNuova(giorno, libero ?? SLOT_ORE[0]);
   }
 
   const lineTop =
-    nowMinuti >= SLOT_INIZIO_MINUTI && nowMinuti <= SLOT_FINE_MINUTI + 30
-      ? ((nowMinuti - SLOT_INIZIO_MINUTI) / 30) * SLOT_ALTEZZA_PX
+    nowMinuti >= SLOT_INIZIO_MINUTI && nowMinuti <= SLOT_FINE_MINUTI + SLOT_PASSO_MINUTI
+      ? ((nowMinuti - SLOT_INIZIO_MINUTI) / SLOT_PASSO_MINUTI) * SLOT_ALTEZZA_PX
       : null;
 
   return (
@@ -165,39 +184,46 @@ export function CalendarioSettimana({ lunedi, oggi, calls }: CalendarioSettimana
         <p className="mb-2 text-sm font-medium capitalize text-brand-muted">{formatGiornoCompleto(selectedDay)}</p>
         <ul className="overflow-hidden rounded-brand-lg border border-brand-border bg-brand-elevated shadow-brand-md">
           {SLOT_ORE.map((ora) => {
-            const call = bySlot.get(slotKey(selectedDay, ora));
+            const occupying = occupancy.get(slotKey(selectedDay, ora));
+            const isStart = occupying ? normalizzaOra(occupying.ora) === ora : false;
+            if (occupying && !isStart) return null;
             const passato = isSlotPassato(selectedDay, ora, oggi, nowMinuti);
             return (
               <li key={ora} className="border-b border-brand-border last:border-b-0">
                 <button
                   type="button"
-                  onClick={() => (call ? setDraft(callToDraft(call)) : openNuova(selectedDay, ora))}
+                  onClick={() => (occupying ? setDraft(callToDraft(occupying)) : openNuova(selectedDay, ora))}
                   className={`flex w-full items-start gap-3 px-3 py-2.5 text-left ${
-                    call ? "bg-brand-accent/10" : passato ? "opacity-55" : ""
+                    occupying ? "bg-brand-accent/10" : passato ? "opacity-55" : ""
                   }`}
                 >
-                  <span className="w-12 shrink-0 pt-0.5 text-xs font-semibold tabular-nums text-brand-muted">
-                    {ora}
+                  <span className="w-16 shrink-0 pt-0.5 text-xs font-semibold tabular-nums text-brand-muted">
+                    {occupying ? `${ora}–${oraFineCall(occupying.ora, occupying.durataMinuti)}` : ora}
                   </span>
-                  {call ? (
+                  {occupying ? (
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm font-semibold text-brand-text">{call.azienda}</span>
+                      <span className="block truncate text-sm font-semibold text-brand-text">
+                        {occupying.azienda}
+                      </span>
+                      <span className="mt-0.5 text-[11px] text-brand-muted">
+                        {durataCall(occupying.durataMinuti)} min
+                      </span>
                       <span className="mt-0.5 flex flex-wrap gap-x-3 text-xs text-brand-muted">
-                        {call.telefono && (
+                        {occupying.telefono && (
                           <span className="inline-flex items-center gap-1">
                             <Phone className="h-3 w-3" />
-                            {call.telefono}
+                            {occupying.telefono}
                           </span>
                         )}
-                        {call.email && (
+                        {occupying.email && (
                           <span className="inline-flex items-center gap-1 truncate">
                             <Mail className="h-3 w-3" />
-                            {call.email}
+                            {occupying.email}
                           </span>
                         )}
                       </span>
-                      {call.attivita && (
-                        <span className="mt-0.5 block truncate text-xs text-brand-soft">{call.attivita}</span>
+                      {occupying.attivita && (
+                        <span className="mt-0.5 block truncate text-xs text-brand-soft">{occupying.attivita}</span>
                       )}
                     </span>
                   ) : (
@@ -242,12 +268,13 @@ export function CalendarioSettimana({ lunedi, oggi, calls }: CalendarioSettimana
           </div>
 
           <div className="grid grid-cols-[3.5rem_repeat(7,minmax(0,1fr))]">
-            <div>
+            <div className="grid" style={rowTemplate}>
               {SLOT_ORE.map((ora) => (
                 <div
                   key={ora}
-                  className="flex items-start justify-end border-b border-brand-border pr-2 pt-1 text-[11px] font-medium tabular-nums text-brand-muted"
-                  style={{ height: SLOT_ALTEZZA_PX }}
+                  className={`flex items-start justify-end border-b border-brand-border pr-2 pt-0.5 text-[10px] font-medium tabular-nums text-brand-muted ${
+                    ora.endsWith(":00") ? "font-semibold text-brand-soft" : ""
+                  }`}
                 >
                   {ora}
                 </div>
@@ -257,41 +284,51 @@ export function CalendarioSettimana({ lunedi, oggi, calls }: CalendarioSettimana
             {giorni.map((giorno) => {
               const isToday = giorno === oggi;
               return (
-                <div key={giorno} className="relative border-l border-brand-border">
+                <div key={giorno} className="relative grid border-l border-brand-border" style={rowTemplate}>
                   {isToday && lineTop != null && (
                     <div
-                      className="pointer-events-none absolute inset-x-0 z-10 h-0.5 bg-brand-accent"
+                      className="pointer-events-none absolute inset-x-0 z-20 h-0.5 bg-brand-accent"
                       style={{ top: lineTop }}
                     >
                       <span className="absolute -left-1 -top-1 h-2.5 w-2.5 rounded-full bg-brand-accent" />
                     </div>
                   )}
-                  {SLOT_ORE.map((ora) => {
-                    const call = bySlot.get(slotKey(giorno, ora));
+                  {SLOT_ORE.map((ora, index) => {
+                    const occupying = occupancy.get(slotKey(giorno, ora));
+                    const isStart = occupying ? normalizzaOra(occupying.ora) === ora : false;
+                    if (occupying && !isStart) return null;
                     const passato = isSlotPassato(giorno, ora, oggi, nowMinuti);
+                    const span = occupying ? slotSpanVisibile(ora, occupying.durataMinuti) : 1;
                     return (
                       <button
                         key={ora}
                         type="button"
-                        title={call ? `${ora} · ${call.azienda}` : `${ora} libero`}
-                        onClick={() => (call ? setDraft(callToDraft(call)) : openNuova(giorno, ora))}
-                        className={`block w-full overflow-hidden border-b border-brand-border px-1 py-0.5 text-left transition ${
-                          call
-                            ? "bg-brand-accent/20 hover:bg-brand-accent/30"
+                        title={
+                          occupying
+                            ? `${ora}–${oraFineCall(occupying.ora, occupying.durataMinuti)} · ${occupying.azienda}`
+                            : `${ora} libero`
+                        }
+                        onClick={() => (occupying ? setDraft(callToDraft(occupying)) : openNuova(giorno, ora))}
+                        className={`z-10 block w-full overflow-hidden border-b border-brand-border px-1 py-0.5 text-left transition ${
+                          occupying
+                            ? "rounded-sm bg-brand-accent/25 hover:bg-brand-accent/35"
                             : passato
                               ? "bg-transparent hover:bg-brand-surface/80"
                               : "hover:bg-brand-accent/10"
-                        } ${isToday && !call ? "bg-brand-accent/[0.04]" : ""}`}
-                        style={{ height: SLOT_ALTEZZA_PX }}
+                        } ${isToday && !occupying ? "bg-brand-accent/[0.04]" : ""}`}
+                        style={{ gridRow: `${index + 1} / span ${span}` }}
                       >
-                        {call ? (
+                        {occupying ? (
                           <span className="block min-w-0">
                             <span className="block truncate text-[11px] font-bold leading-tight text-brand-text">
-                              {call.azienda}
+                              {occupying.azienda}
                             </span>
-                            {call.attivita && (
+                            <span className="block truncate text-[10px] leading-tight text-brand-muted">
+                              {ora}–{oraFineCall(occupying.ora, occupying.durataMinuti)}
+                            </span>
+                            {occupying.attivita && (
                               <span className="block truncate text-[10px] leading-tight text-brand-muted">
-                                {call.attivita}
+                                {occupying.attivita}
                               </span>
                             )}
                           </span>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
+import { SETUP_PORTALE_COLLABORATORI_SQL } from "@/lib/collaboratori/setupPortaleSql";
 
 const SETUP_SQL = `-- Collaboratori: esegui questo script una volta in Supabase → SQL Editor
 
@@ -57,6 +58,8 @@ on public.collaboratore_lavori for all
 to authenticated
 using (true)
 with check (true);
+
+${SETUP_PORTALE_COLLABORATORI_SQL}
 `;
 
 export function SetupCollaboratoriNotice() {

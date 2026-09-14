@@ -2,7 +2,15 @@
 
 import { useState, useTransition, type FormEvent } from "react";
 import { Loader2, Trash2, X } from "lucide-react";
-import { SLOT_ORE, formatGiornoCompleto, normalizzaOra } from "@/lib/calendario/date";
+import {
+  CALL_DURATA_DEFAULT,
+  CALL_DURATE,
+  SLOT_ORE,
+  durataCall,
+  formatGiornoCompleto,
+  normalizzaOra,
+  oraFineCall,
+} from "@/lib/calendario/date";
 import type { CallAppuntamento, CallAppuntamentoInput } from "@/lib/calendario/types";
 import { createCall, deleteCall, updateCall } from "../actions";
 
@@ -14,6 +22,7 @@ export type CallFormDraft = {
   id?: string;
   giorno: string;
   ora: string;
+  durataMinuti: number;
   azienda: string;
   email: string;
   telefono: string;
@@ -30,6 +39,7 @@ export function callToDraft(call: CallAppuntamento): CallFormDraft {
     id: call.id,
     giorno: call.giorno,
     ora: normalizzaOra(call.ora),
+    durataMinuti: durataCall(call.durataMinuti),
     azienda: call.azienda,
     email: call.email ?? "",
     telefono: call.telefono ?? "",
@@ -42,17 +52,20 @@ export function CallFormModal({ draft, onClose }: CallFormModalProps) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [giorno, setGiorno] = useState(draft.giorno);
   const [ora, setOra] = useState(normalizzaOra(draft.ora));
+  const [durataMinuti, setDurataMinuti] = useState(durataCall(draft.durataMinuti ?? CALL_DURATA_DEFAULT));
   const [azienda, setAzienda] = useState(draft.azienda);
   const [email, setEmail] = useState(draft.email);
   const [telefono, setTelefono] = useState(draft.telefono);
   const [attivita, setAttivita] = useState(draft.attivita);
 
   const isEdit = Boolean(draft.id);
+  const oraFine = oraFineCall(ora, durataMinuti);
 
   function payload(): CallAppuntamentoInput {
     return {
       giorno,
       ora,
+      durataMinuti,
       azienda,
       email: email.trim() || null,
       telefono: telefono.trim() || null,
@@ -116,7 +129,7 @@ export function CallFormModal({ draft, onClose }: CallFormModalProps) {
               {isEdit ? "Modifica call" : "Nuova call"}
             </p>
             <h2 className="mt-1 text-lg font-bold text-brand-text">
-              {formatGiornoCompleto(giorno || draft.giorno)} · {ora || draft.ora}
+              {formatGiornoCompleto(giorno || draft.giorno)} · {ora || draft.ora}–{oraFine}
             </h2>
           </div>
           <button
@@ -147,7 +160,7 @@ export function CallFormModal({ draft, onClose }: CallFormModalProps) {
             />
           </label>
           <label className="block">
-            <span className={LABEL}>Orario (30 min)</span>
+            <span className={LABEL}>Inizio</span>
             <select value={ora} onChange={(event) => setOra(event.target.value)} className={INPUT}>
               {SLOT_ORE.map((slot) => (
                 <option key={slot} value={slot}>
@@ -157,6 +170,25 @@ export function CallFormModal({ draft, onClose }: CallFormModalProps) {
             </select>
           </label>
         </div>
+
+        <label className="mt-3 block">
+          <span className={LABEL}>Durata</span>
+          <select
+            value={durataMinuti}
+            onChange={(event) => setDurataMinuti(Number(event.target.value))}
+            className={INPUT}
+          >
+            {CALL_DURATE.map((durata) => (
+              <option key={durata} value={durata}>
+                {durata} minuti{durata === CALL_DURATA_DEFAULT ? " (consigliata)" : ""}
+              </option>
+            ))}
+          </select>
+          <span className="mt-1 block text-xs text-brand-muted">
+            Di default occupa 30 minuti e chiude gli slot dopo. Puoi accorciare o allungare. Termina alle{" "}
+            <span className="font-semibold text-brand-text">{oraFine}</span>.
+          </span>
+        </label>
 
         <label className="mt-3 block">
           <span className={LABEL}>Nome azienda *</span>

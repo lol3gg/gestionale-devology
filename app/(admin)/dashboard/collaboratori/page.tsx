@@ -6,6 +6,9 @@ import type { Collaboratore, CollaboratoreLavoro, PreventivoOption, TipoCollabor
 import { NuovoCollaboratoreForm } from "./_components/NuovoCollaboratoreForm";
 import { CollaboratoriLista } from "./_components/CollaboratoriLista";
 import { SetupCollaboratoriNotice } from "./_components/SetupCollaboratoriNotice";
+import { SetupPortaleCollaboratoriNotice } from "./_components/SetupPortaleCollaboratoriNotice";
+import { ensureCollaboratoriTokens } from "@/lib/collaboratori/portale";
+import { hasServiceRoleKey } from "@/lib/supabase/service";
 
 export const dynamic = "force-dynamic";
 
@@ -20,22 +23,28 @@ type PreventivoJoin = {
   numero_preventivo: string | null;
 };
 
-function isMissingTable(message: string | undefined) {
+function isMissingCollaboratoriTable(message: string | undefined) {
   if (!message) return false;
-  return /schema cache|does not exist|collaboratori/i.test(message);
+  return /Could not find the table|relation [\"']?public\.collaboratori|collaboratore_lavori/i.test(message);
+}
+
+function isMissingPortale(message: string | undefined) {
+  if (!message) return false;
+  return /token|link_attivo|contatti_collaboratore/i.test(message);
 }
 
 export default async function CollaboratoriPage() {
   const supabase = createClient();
 
   const [
-    { data: collaboratoriRows, error: collaboratoriError },
+    portaleSelect,
     { data: lavoriRows, error: lavoriError },
     { data: preventiviRows, error: preventiviError },
+    contattiProbe,
   ] = await Promise.all([
     supabase
       .from("collaboratori")
-      .select("id, nome, tipo, contatto, iban, percentuale, note, attivo, created_at")
+      .select("id, nome, tipo, contatto, iban, percentuale, note, attivo, token, link_attivo, created_at")
       .order("attivo", { ascending: false })
       .order("nome", { ascending: true }),
     supabase
@@ -48,10 +57,35 @@ export default async function CollaboratoriPage() {
       .from("preventivi")
       .select("id, nome, cognome, azienda, prezzo, stato, data_invio, numero_preventivo")
       .order("data_invio", { ascending: false }),
+    supabase.from("contatti_collaboratore").select("id").limit(1),
   ]);
 
+  let collaboratoriRows = portaleSelect.data;
+  let collaboratoriError = portaleSelect.error;
+  const missingPortaleColumns = Boolean(collaboratoriError && isMissingPortale(collaboratoriError.message));
+
+  if (missingPortaleColumns) {
+    const fallback = await supabase
+      .from("collaboratori")
+      .select("id, nome, tipo, contatto, iban, percentuale, note, attivo, created_at")
+      .order("attivo", { ascending: false })
+      .order("nome", { ascending: true });
+    collaboratoriRows = fallback.data;
+    collaboratoriError = fallback.error;
+  }
+
+  const missingContatti = Boolean(
+    contattiProbe.error && /contatti_collaboratore|schema cache|does not exist/i.test(contattiProbe.error.message)
+  );
+  const missingPortale = missingPortaleColumns || missingContatti;
+  const missingTables =
+    isMissingCollaboratoriTable(collaboratoriError?.message) || isMissingCollaboratoriTable(lavoriError?.message);
   const error = collaboratoriError ?? lavoriError ?? preventiviError;
-  const missingTables = isMissingTable(collaboratoriError?.message) || isMissingTable(lavoriError?.message);
+  const serviceRolePronta = hasServiceRoleKey();
+
+  if (!collaboratoriError && !missingPortaleColumns) {
+    await ensureCollaboratoriTokens();
+  }
 
   const lavoriPerCollaboratore = new Map<string, CollaboratoreLavoro[]>();
   for (const row of lavoriRows ?? []) {
@@ -89,6 +123,8 @@ export default async function CollaboratoriPage() {
     percentuale: Number(row.percentuale),
     note: row.note,
     attivo: row.attivo,
+    token: "token" in row ? (row.token as string | null) : null,
+    link_attivo: "link_attivo" in row ? Boolean(row.link_attivo) : true,
     lavori: lavoriPerCollaboratore.get(row.id) ?? [],
   }));
 
@@ -114,14 +150,27 @@ export default async function CollaboratoriPage() {
         </p>
       </div>
 
-      {error &&
-        (missingTables ? (
-          <SetupCollaboratoriNotice />
-        ) : (
-          <div className="rounded-md border border-brand-accent/40 bg-brand-accent/10 p-4 text-sm text-brand-accent-light">
-            Errore nel caricamento: {error.message}
-          </div>
-        ))}
+      {missingTables && <SetupCollaboratoriNotice />}
+      {!missingTables && missingPortale && <SetupPortaleCollaboratoriNotice />}
+      {error && !missingTables && !missingPortale && (
+        <div className="rounded-md border border-brand-accent/40 bg-brand-accent/10 p-4 text-sm text-brand-accent-light">
+          Errore nel caricamento: {error.message}
+        </div>
+      )}
+      {!missingTables && !missingPortale && !serviceRolePronta && (
+        <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-200">
+          Schema portale ok. Manca <code className="font-mono">SUPABASE_SERVICE_ROLE_KEY</code> in{" "}
+          <code className="font-mono">.env.local</code> (e su Vercel). Serve per il portale pubblico: non è la anon
+          key, la trovi in Supabase → Project Settings → API → service_role.
+        </div>
+      )}
+      {!missingTables && !missingPortale && serviceRolePronta && (
+        <p className="text-xs text-brand-muted">
+          Portale pronto: ogni collaboratore ha un token univoco. I nuovi lo ricevono in automatico. Lo schema
+          contatti è attivo (RLS: solo admin autenticati; il portale userà la service role dopo aver validato il
+          token).
+        </p>
+      )}
 
       <div className="grid grid-cols-2 gap-3">
         <RiepilogoCard

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { importoDovuto } from "@/lib/collaboratori/calcoli";
+import { generaTokenCollaboratore } from "@/lib/collaboratori/token";
 import type { TipoCollaboratore } from "@/lib/collaboratori/types";
 
 function revalidateCollaboratori() {
@@ -22,7 +23,7 @@ export type NuovoCollaboratoreInput = {
 
 export async function createCollaboratore(input: NuovoCollaboratoreInput) {
   const supabase = createClient();
-  const { error } = await supabase.from("collaboratori").insert({
+  const payload = {
     nome: input.nome,
     tipo: input.tipo,
     contatto: input.contatto,
@@ -30,7 +31,23 @@ export async function createCollaboratore(input: NuovoCollaboratoreInput) {
     percentuale: input.percentuale,
     note: input.note,
     attivo: true,
-  });
+    token: generaTokenCollaboratore(),
+    link_attivo: true,
+  };
+  let { error } = await supabase.from("collaboratori").insert(payload);
+
+  if (error && /token|link_attivo|schema cache|column/i.test(error.message)) {
+    const fallback = await supabase.from("collaboratori").insert({
+      nome: payload.nome,
+      tipo: payload.tipo,
+      contatto: payload.contatto,
+      iban: payload.iban,
+      percentuale: payload.percentuale,
+      note: payload.note,
+      attivo: true,
+    });
+    error = fallback.error;
+  }
 
   if (error) {
     throw new Error(`Impossibile salvare il collaboratore: ${error.message}`);

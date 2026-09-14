@@ -258,7 +258,9 @@ create table collaboratori (
   percentuale numeric(5,2) not null default 0
     check (percentuale >= 0 and percentuale <= 100),
   note text,
-  attivo boolean not null default true
+  attivo boolean not null default true,
+  token text not null,
+  link_attivo boolean not null default true
 );
 
 create table collaboratore_lavori (
@@ -288,6 +290,41 @@ with check (true);
 
 create policy "Solo autenticati gestiscono collaboratore_lavori"
 on collaboratore_lavori for all
+to authenticated
+using (true)
+with check (true);
+
+create table contatti_collaboratore (
+  id uuid primary key default gen_random_uuid(),
+  collaboratore_id uuid not null references collaboratori(id) on delete cascade,
+  nome_azienda text,
+  referente text,
+  telefono text,
+  email text,
+  note text,
+  stato text not null default 'da_chiamare'
+    check (stato in (
+      'da_chiamare',
+      'chiamato',
+      'da_richiamare',
+      'call_fissata',
+      'interessato',
+      'non_interessato'
+    )),
+  data_richiamo timestamptz,
+  data_call timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint contatti_collaboratore_richiamo_check
+    check (stato <> 'da_richiamare' or data_richiamo is not null),
+  constraint contatti_collaboratore_call_check
+    check (stato <> 'call_fissata' or data_call is not null)
+);
+
+alter table contatti_collaboratore enable row level security;
+
+create policy "Solo autenticati gestiscono contatti_collaboratore"
+on contatti_collaboratore for all
 to authenticated
 using (true)
 with check (true);

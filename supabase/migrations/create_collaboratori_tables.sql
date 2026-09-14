@@ -12,7 +12,9 @@ create table if not exists public.collaboratori (
   percentuale numeric(5,2) not null default 0
     check (percentuale >= 0 and percentuale <= 100),
   note text,
-  attivo boolean not null default true
+  attivo boolean not null default true,
+  token text not null,
+  link_attivo boolean not null default true
 );
 
 create table if not exists public.collaboratore_lavori (
@@ -30,6 +32,9 @@ create table if not exists public.collaboratore_lavori (
   data date not null default current_date,
   note text
 );
+
+create unique index if not exists collaboratori_token_unique
+  on public.collaboratori (token);
 
 create unique index if not exists collaboratore_lavori_unique_preventivo
   on public.collaboratore_lavori (collaboratore_id, preventivo_id)

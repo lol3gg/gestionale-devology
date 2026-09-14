@@ -42,7 +42,41 @@ export type Collaboratore = {
   percentuale: number;
   note: string | null;
   attivo: boolean;
+  token: string | null;
+  link_attivo: boolean;
   lavori: CollaboratoreLavoro[];
+};
+
+export type CollaboratorePortale = {
+  id: string;
+  nome: string;
+  token: string;
+};
+
+export const STATI_CONTATTO = [
+  "da_chiamare",
+  "chiamato",
+  "da_richiamare",
+  "call_fissata",
+  "interessato",
+  "non_interessato",
+] as const;
+
+export type StatoContatto = (typeof STATI_CONTATTO)[number];
+
+export type ContattoCollaboratore = {
+  id: string;
+  collaboratore_id: string;
+  nome_azienda: string | null;
+  referente: string | null;
+  telefono: string | null;
+  email: string | null;
+  note: string | null;
+  stato: StatoContatto;
+  data_richiamo: string | null;
+  data_call: string | null;
+  created_at: string;
+  updated_at: string;
 };
 
 export type PreventivoOption = {

@@ -2,12 +2,12 @@ import { CalendarDays, Phone } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import {
   addGiorni,
+  durataCall,
   isIsoDate,
   lunediDellaSettimana,
   minutiCorrentiRoma,
   oggiIsoRoma,
   oraToMinuti,
-  SLOT_DURATA_MINUTI,
 } from "@/lib/calendario/date";
 import { listCalls } from "@/lib/calendario/store";
 import { CalendarioSettimana } from "./_components/CalendarioSettimana";
@@ -36,7 +36,7 @@ export default async function CalendarioPage({
   const oggiCalls = oggiInSettimana ? calls.filter((call) => call.giorno === oggi) : (todayResult?.calls ?? []);
   const oraAdesso = minutiCorrentiRoma();
   const prossima =
-    oggiCalls.find((call) => oraToMinuti(call.ora) + SLOT_DURATA_MINUTI > oraAdesso) ?? null;
+    oggiCalls.find((call) => oraToMinuti(call.ora) + durataCall(call.durataMinuti) > oraAdesso) ?? null;
 
   return (
     <div className="space-y-6">
@@ -48,8 +48,9 @@ export default async function CalendarioPage({
           Calendario
         </h1>
         <p className="mt-1 text-sm text-brand-muted">
-          Fissa le call ogni 30 minuti: serve il nome dell&apos;azienda. Email, cellulare e cosa fanno sono
-          facoltativi.
+          Fasce ogni 10 minuti, dalle 04:00 alle 19:30. Una call occupa 30 minuti e chiude gli slot dopo:
+          se serve, in modifica puoi accorciare o allungare. Serve il nome dell&apos;azienda; email,
+          cellulare e attività sono facoltativi.
         </p>
       </div>
 
