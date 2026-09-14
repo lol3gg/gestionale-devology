@@ -65,14 +65,16 @@ export function CallFormModal({ draft, onClose }: CallFormModalProps) {
     setErrorMessage(null);
     startTransition(async () => {
       try {
-        if (draft.id) {
-          await updateCall(draft.id, payload());
-        } else {
-          await createCall(payload());
+        const result = draft.id
+          ? await updateCall(draft.id, payload())
+          : await createCall(payload());
+        if (!result.ok) {
+          setErrorMessage(result.error);
+          return;
         }
         onClose();
-      } catch (error) {
-        setErrorMessage(error instanceof Error ? error.message : "Errore nel salvataggio.");
+      } catch {
+        setErrorMessage("Errore nel salvataggio.");
       }
     });
   }
@@ -83,10 +85,14 @@ export function CallFormModal({ draft, onClose }: CallFormModalProps) {
     setErrorMessage(null);
     startTransition(async () => {
       try {
-        await deleteCall(draft.id as string);
+        const result = await deleteCall(draft.id as string);
+        if (!result.ok) {
+          setErrorMessage(result.error);
+          return;
+        }
         onClose();
-      } catch (error) {
-        setErrorMessage(error instanceof Error ? error.message : "Errore nell'eliminazione.");
+      } catch {
+        setErrorMessage("Errore nell'eliminazione.");
       }
     });
   }

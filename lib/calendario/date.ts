@@ -66,8 +66,11 @@ export function oraToMinuti(ora: string): number {
   return ore * 60 + minuti;
 }
 
-export function normalizzaOra(value: string): string {
-  return value.slice(0, 5);
+export function normalizzaOra(value: string | null | undefined): string {
+  if (!value) return "00:00";
+  const match = String(value).match(/(\d{1,2}):(\d{2})/);
+  if (!match) return "00:00";
+  return `${match[1].padStart(2, "0")}:${match[2]}`;
 }
 
 export function generaSlot(): string[] {

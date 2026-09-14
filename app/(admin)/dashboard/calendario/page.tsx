@@ -7,39 +7,12 @@ import {
   minutiCorrentiRoma,
   oggiIsoRoma,
   oraToMinuti,
-  normalizzaOra,
   SLOT_DURATA_MINUTI,
 } from "@/lib/calendario/date";
-import type { CallAppuntamento } from "@/lib/calendario/types";
+import { listCalls } from "@/lib/calendario/store";
 import { CalendarioSettimana } from "./_components/CalendarioSettimana";
-import { SetupCalendarioNotice } from "./_components/SetupCalendarioNotice";
 
 export const dynamic = "force-dynamic";
-
-function isMissingTable(message: string | undefined) {
-  if (!message) return false;
-  return /schema cache|does not exist|call_appuntamenti/i.test(message);
-}
-
-function mapCall(row: {
-  id: string;
-  giorno: string;
-  ora: string;
-  azienda: string;
-  email: string | null;
-  telefono: string | null;
-  attivita: string | null;
-}): CallAppuntamento {
-  return {
-    id: row.id,
-    giorno: row.giorno,
-    ora: normalizzaOra(row.ora),
-    azienda: row.azienda,
-    email: row.email,
-    telefono: row.telefono,
-    attivita: row.attivita,
-  };
-}
 
 export default async function CalendarioPage({
   searchParams,
@@ -52,26 +25,15 @@ export default async function CalendarioPage({
   const domenica = addGiorni(lunedi, 6);
 
   const supabase = createClient();
-  const [{ data: weekRows, error: weekError }, { data: todayRows, error: todayError }] = await Promise.all([
-    supabase
-      .from("call_appuntamenti")
-      .select("id, giorno, ora, azienda, email, telefono, attivita")
-      .gte("giorno", lunedi)
-      .lte("giorno", domenica)
-      .order("giorno", { ascending: true })
-      .order("ora", { ascending: true }),
-    supabase
-      .from("call_appuntamenti")
-      .select("id, giorno, ora, azienda, email, telefono, attivita")
-      .eq("giorno", oggi)
-      .order("ora", { ascending: true }),
+  const oggiInSettimana = oggi >= lunedi && oggi <= domenica;
+  const [weekResult, todayResult] = await Promise.all([
+    listCalls(supabase, lunedi, domenica),
+    oggiInSettimana ? Promise.resolve(null) : listCalls(supabase, oggi, oggi),
   ]);
 
-  const error = weekError ?? todayError;
-  const missingTables = isMissingTable(weekError?.message) || isMissingTable(todayError?.message);
-
-  const calls = (weekRows ?? []).map(mapCall);
-  const oggiCalls = (todayRows ?? []).map(mapCall);
+  const error = weekResult.error ?? todayResult?.error ?? null;
+  const calls = weekResult.calls;
+  const oggiCalls = oggiInSettimana ? calls.filter((call) => call.giorno === oggi) : (todayResult?.calls ?? []);
   const oraAdesso = minutiCorrentiRoma();
   const prossima =
     oggiCalls.find((call) => oraToMinuti(call.ora) + SLOT_DURATA_MINUTI > oraAdesso) ?? null;
@@ -91,14 +53,11 @@ export default async function CalendarioPage({
         </p>
       </div>
 
-      {error &&
-        (missingTables ? (
-          <SetupCalendarioNotice />
-        ) : (
-          <div className="rounded-md border border-brand-accent/40 bg-brand-accent/10 p-4 text-sm text-brand-accent-light">
-            Errore nel caricamento: {error.message}
-          </div>
-        ))}
+      {error && (
+        <div className="rounded-md border border-brand-accent/40 bg-brand-accent/10 p-4 text-sm text-brand-accent-light">
+          Errore nel caricamento: {error}
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
         <div className="rounded-brand-lg border border-brand-border bg-brand-elevated p-3.5 shadow-brand-md sm:p-5">
