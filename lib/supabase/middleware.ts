@@ -33,9 +33,19 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  try {
+    const {
+      data: { user },
+    } = await Promise.race([
+      supabase.auth.getUser(),
+      new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error("Supabase timeout")), 4000);
+      }),
+    ]);
 
-  return { response, user };
+    return { response, user };
+  } catch {
+    // Progetto irraggiungibile o DNS assente: non bloccare login/home.
+    return { response, user: null };
+  }
 }

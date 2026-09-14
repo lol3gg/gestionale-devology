@@ -6,10 +6,15 @@ import { createClient } from "@/lib/supabase/server";
  * Il form preventivo resta su /richiedi (link da inviare ai clienti).
  */
 export default async function Home() {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  let user = null;
+
+  try {
+    const supabase = createClient();
+    const result = await supabase.auth.getUser();
+    user = result.data.user;
+  } catch {
+    user = null;
+  }
 
   redirect(user ? "/dashboard" : "/login");
 }

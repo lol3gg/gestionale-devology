@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Archive, FileText, Inbox, Megaphone, Wallet } from "lucide-react";
+import { Archive, FileText, Inbox, Megaphone, Users, Wallet } from "lucide-react";
 
 /**
  * Sezioni "di primo livello" note, usate per capire se la rotta corrente
  * (es. "/dashboard/xyz") appartiene a "Richieste" (una richiesta specifica)
  * oppure a una sezione dedicata.
  */
-const SEZIONI_DEDICATE = ["preventivi", "contabilita", "archivio", "prontopro"];
+const SEZIONI_DEDICATE = ["preventivi", "contabilita", "archivio", "prontopro", "collaboratori"];
 
 const NAV_ITEMS = [
   {
@@ -48,6 +48,14 @@ const NAV_ITEMS = [
     isActive: (pathname: string) => pathname.startsWith("/dashboard/contabilita"),
   },
   {
+    href: "/dashboard/collaboratori",
+    label: "Collaboratori",
+    shortLabel: "Collab.",
+    icon: Users,
+    badgeKey: null,
+    isActive: (pathname: string) => pathname.startsWith("/dashboard/collaboratori"),
+  },
+  {
     href: "/dashboard/prontopro",
     label: "ProntoPro",
     shortLabel: "ProntoPro",
@@ -79,12 +87,12 @@ export function DashboardNav({
     <nav
       className={
         isBottom
-          ? "grid grid-cols-5 gap-0 px-0.5 pb-safe pt-1"
+          ? "grid grid-cols-6 gap-0 px-0.5 pb-safe pt-1"
           : isMobile
             ? "flex items-center gap-2 overflow-x-auto px-4 py-2.5"
             : isIconOnly
-              ? "flex-1 space-y-1 px-2 py-4"
-              : "flex-1 space-y-1 px-4 py-6"
+              ? "min-h-0 flex-1 space-y-1 overflow-y-auto px-2 py-4"
+              : "min-h-0 flex-1 space-y-1 overflow-y-auto px-4 py-6"
       }
     >
       {NAV_ITEMS.map((item) => {

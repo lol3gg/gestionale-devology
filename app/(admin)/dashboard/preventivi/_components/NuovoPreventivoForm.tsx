@@ -4,6 +4,10 @@ import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Plus, UploadCloud, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { assegnaCollaboratoreAPreventivo } from "@/app/(admin)/dashboard/collaboratori/actions";
+import type { CollaboratoreOption } from "@/lib/collaboratori/types";
+import { importoDovuto } from "@/lib/collaboratori/calcoli";
+import { formatEuro } from "@/lib/contabilita/format";
 import {
   STATO_PREVENTIVO_DEFAULT,
   STATO_PREVENTIVO_OPTIONS,
@@ -30,7 +34,7 @@ function buildNumeroPreventivo(dataInvio: string) {
 const INPUT =
   "w-full rounded-lg border border-brand-border-strong bg-brand-surface px-3 py-3 text-base text-brand-text placeholder:text-brand-muted shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-accent sm:py-2 sm:text-sm";
 
-export function NuovoPreventivoForm() {
+export function NuovoPreventivoForm({ collaboratori }: { collaboratori: CollaboratoreOption[] }) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -41,6 +45,7 @@ export function NuovoPreventivoForm() {
   const [dataInvio, setDataInvio] = useState(todayIsoDate());
   const [prezzo, setPrezzo] = useState("");
   const [stato, setStato] = useState<StatoPreventivo>(STATO_PREVENTIVO_DEFAULT);
+  const [collaboratoreId, setCollaboratoreId] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -81,6 +86,7 @@ export function NuovoPreventivoForm() {
     setDataInvio(todayIsoDate());
     setPrezzo("");
     setStato(STATO_PREVENTIVO_DEFAULT);
+    setCollaboratoreId("");
     setFile(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
@@ -133,7 +139,9 @@ export function NuovoPreventivoForm() {
       .createSignedUrl(storagePath, SIGNED_URL_EXPIRY_SECONDS);
     const urlFile = signedUrlData?.signedUrl ?? "";
 
-    const { error: insertError } = await supabase.from("preventivi").insert({
+    const { data: inserted, error: insertError } = await supabase
+      .from("preventivi")
+      .insert({
       richiesta_id: null,
       nome: nome.trim(),
       cognome: cognome.trim(),
@@ -144,13 +152,32 @@ export function NuovoPreventivoForm() {
       numero_preventivo: buildNumeroPreventivo(dataInvio),
       nome_file: file.name,
       url_file: urlFile,
-    });
+      })
+      .select("id")
+      .single();
 
-    if (insertError) {
+    if (insertError || !inserted) {
       await supabase.storage.from(BUCKET).remove([storagePath]);
-      setErrorMessage(insertError.message);
+      setErrorMessage(insertError?.message ?? "Errore nel salvataggio del preventivo.");
       setIsUploading(false);
       return;
+    }
+
+    if (collaboratoreId && prezzoNumber != null) {
+      try {
+        await assegnaCollaboratoreAPreventivo({
+          preventivo_id: inserted.id,
+          collaboratore_id: collaboratoreId,
+          cliente: `${nome.trim()} ${cognome.trim()}`.trim(),
+          prezzo: prezzoNumber,
+          data: dataInvio,
+        });
+      } catch (error) {
+        setErrorMessage(error instanceof Error ? error.message : "Preventivo salvato, ma il collaboratore non è stato collegato.");
+        setIsUploading(false);
+        router.refresh();
+        return;
+      }
     }
 
     resetForm();
@@ -298,6 +325,41 @@ export function NuovoPreventivoForm() {
             </select>
           </div>
         </div>
+
+        {collaboratori.length > 0 && (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div>
+              <label htmlFor="prev_collab" className="mb-1 block text-xs font-medium text-brand-soft">
+                Collaboratore che lo chiude
+              </label>
+              <select
+                id="prev_collab"
+                value={collaboratoreId}
+                onChange={(event) => setCollaboratoreId(event.target.value)}
+                className={INPUT}
+              >
+                <option value="">Nessuno</option>
+                {collaboratori.map((collaboratore) => (
+                  <option key={collaboratore.id} value={collaboratore.id}>
+                    {collaboratore.nome} · {collaboratore.percentuale}%
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex flex-col justify-end">
+              <p className="text-xs text-brand-muted">
+                {(() => {
+                  const collab = collaboratori.find((item) => item.id === collaboratoreId);
+                  const prezzoNumber = Number(prezzo.replace(",", "."));
+                  if (!collab || Number.isNaN(prezzoNumber) || prezzoNumber <= 0) {
+                    return "Se chiude il progetto, gli spettano prezzo × la sua %.";
+                  }
+                  return `Gli spettano ${formatEuro(importoDovuto(prezzoNumber, collab.percentuale))} (${collab.percentuale}% di ${formatEuro(prezzoNumber)}).`;
+                })()}
+              </p>
+            </div>
+          </div>
+        )}
 
         <div>
           <label htmlFor="prev_file" className="mb-1 block text-xs font-medium text-brand-soft">

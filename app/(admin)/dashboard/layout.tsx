@@ -6,6 +6,7 @@ import { DashboardSidebar } from "./_components/DashboardSidebar";
 import { FullscreenToggle } from "./_components/FullscreenToggle";
 import { ThemeToggle } from "./_components/ThemeToggle";
 import { LinkClienteButton } from "./_components/LinkClienteButton";
+import { LockDashboardScroll } from "./_components/LockDashboardScroll";
 import { LogoutButton } from "./_components/LogoutButton";
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
@@ -21,7 +22,8 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   const initials = email.slice(0, 2).toUpperCase();
 
   return (
-    <div className="flex min-h-screen bg-brand-bg bg-brand-grid bg-[length:40px_40px]">
+    <div className="fixed inset-0 flex overflow-hidden bg-brand-bg bg-brand-grid bg-[length:40px_40px]">
+      <LockDashboardScroll />
       <DashboardSidebar
         email={email}
         initials={initials}
@@ -29,7 +31,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         archivioCount={archivioCount ?? 0}
       />
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         {/* Desktop: controlli fissi in alto a destra. */}
         <div className="fixed right-6 top-6 z-50 hidden items-center gap-2 lg:flex">
           <ThemeToggle />
@@ -37,7 +39,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
         </div>
 
         {/* Mobile header compatto */}
-        <header className="sticky top-0 z-40 flex items-center justify-between gap-3 border-b border-brand-border bg-brand-elevated/90 px-3 py-3 backdrop-blur-xl pt-safe sm:px-4 lg:hidden">
+        <header className="z-40 flex items-center justify-between gap-3 border-b border-brand-border bg-brand-elevated/90 px-3 py-3 backdrop-blur-xl pt-safe sm:px-4 lg:hidden">
           <span className="flex min-w-0 items-center gap-2 text-sm font-bold tracking-[-0.02em] text-brand-text">
             <Image
               src="/logo/devology-icon.svg"
@@ -55,7 +57,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
           </div>
         </header>
 
-        <main className="flex-1 px-3 py-5 pb-[calc(5.5rem+env(safe-area-inset-bottom))] sm:px-6 sm:py-8 lg:px-10 lg:py-10 lg:pb-10">
+        <main className="min-h-0 flex-1 overflow-y-auto px-3 py-5 pb-[calc(5.5rem+env(safe-area-inset-bottom))] sm:px-6 sm:py-8 lg:px-10 lg:py-10 lg:pb-10">
           <div className="mx-auto max-w-[1600px]">{children}</div>
         </main>
 

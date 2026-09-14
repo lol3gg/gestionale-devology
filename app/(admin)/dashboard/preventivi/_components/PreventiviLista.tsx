@@ -17,6 +17,9 @@ import { createClient } from "@/lib/supabase/client";
 import { extractStoragePath } from "@/lib/storage/signedUrl";
 import { formatEuro } from "@/lib/richieste/format";
 import { getAvatarClasses, getInitials } from "@/lib/richieste/initials";
+import { importoDovuto } from "@/lib/collaboratori/calcoli";
+import type { CollaboratoreOption } from "@/lib/collaboratori/types";
+import { assegnaCollaboratoreAPreventivo } from "@/app/(admin)/dashboard/collaboratori/actions";
 import {
   STATO_PREVENTIVO_DEFAULT,
   STATO_PREVENTIVO_OPTIONS,
@@ -47,6 +50,9 @@ export type PreventivoListaItem = {
   prezzo: number | null;
   stato: string;
   downloadUrl: string | null;
+  collaboratoreId: string | null;
+  percentualeCollaboratore: number | null;
+  collaboratoreNome: string | null;
   richiesta: { id: string; nome: string; cognome: string } | null;
 };
 
@@ -102,7 +108,13 @@ function sumPrezzi(items: PreventivoListaItem[]) {
   return items.reduce((sum, item) => sum + (item.prezzo != null ? Number(item.prezzo) : 0), 0);
 }
 
-export function PreventiviLista({ preventiviIniziali }: { preventiviIniziali: PreventivoListaItem[] }) {
+export function PreventiviLista({
+  preventiviIniziali,
+  collaboratori,
+}: {
+  preventiviIniziali: PreventivoListaItem[];
+  collaboratori: CollaboratoreOption[];
+}) {
   const router = useRouter();
   const [preventivi, setPreventivi] = useState(preventiviIniziali);
   const [filtro, setFiltro] = useState<FiltroPreventivi>("tutti");
@@ -187,6 +199,70 @@ export function PreventiviLista({ preventiviIniziali }: { preventiviIniziali: Pr
     setPreventivi((current) => current.filter((item) => item.id !== preventivo.id));
     setDeletingId(null);
     startTransition(() => router.refresh());
+  }
+
+  async function handleCollaboratoreChange(preventivo: PreventivoListaItem, collaboratoreId: string) {
+    setUpdatingId(preventivo.id);
+    setErrorMessage(null);
+    const cliente = getCliente(preventivo);
+    try {
+      await assegnaCollaboratoreAPreventivo({
+        preventivo_id: preventivo.id,
+        collaboratore_id: collaboratoreId || null,
+        cliente: `${cliente.nome} ${cliente.cognome}`.trim() || cliente.azienda || "Cliente",
+        prezzo: preventivo.prezzo ?? 0,
+        data: preventivo.data_invio,
+      });
+      const collab = collaboratori.find((item) => item.id === collaboratoreId);
+      setPreventivi((current) =>
+        current.map((item) =>
+          item.id === preventivo.id
+            ? {
+                ...item,
+                collaboratoreId: collaboratoreId || null,
+                collaboratoreNome: collab?.nome ?? null,
+                percentualeCollaboratore: collab ? collab.percentuale : null,
+              }
+            : item
+        )
+      );
+      startTransition(() => router.refresh());
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Errore nel collegamento del collaboratore.");
+    }
+    setUpdatingId(null);
+  }
+
+  function CollaboratoreSelect({ preventivo }: { preventivo: PreventivoListaItem }) {
+    const spettano =
+      preventivo.collaboratoreId && preventivo.prezzo != null && preventivo.percentualeCollaboratore != null
+        ? importoDovuto(preventivo.prezzo, preventivo.percentualeCollaboratore)
+        : null;
+
+    return (
+      <div className="space-y-1">
+        <select
+          value={preventivo.collaboratoreId ?? ""}
+          disabled={updatingId === preventivo.id}
+          onChange={(event) => handleCollaboratoreChange(preventivo, event.target.value)}
+          aria-label="Collaboratore che ha chiuso il progetto"
+          className="w-full min-w-[10rem] rounded-lg border border-brand-border-strong bg-brand-surface px-2 py-1.5 text-xs font-medium text-brand-text focus:outline-none focus:ring-2 focus:ring-brand-accent disabled:opacity-60"
+        >
+          <option value="">Nessuno</option>
+          {collaboratori.map((collaboratore) => (
+            <option key={collaboratore.id} value={collaboratore.id}>
+              {collaboratore.nome} · {collaboratore.percentuale}%
+            </option>
+          ))}
+        </select>
+        {spettano != null && (
+          <p className="text-[11px] font-semibold text-amber-300">
+            Gli spettano {formatEuro(spettano)}
+            {preventivo.stato === "accettato" ? "" : " (quando accettato)"}
+          </p>
+        )}
+      </div>
+    );
   }
 
   function StatoSelect({ preventivo }: { preventivo: PreventivoListaItem }) {
@@ -328,6 +404,11 @@ export function PreventiviLista({ preventiviIniziali }: { preventiviIniziali: Pr
                       <div className="mt-3">
                         <StatoSelect preventivo={preventivo} />
                       </div>
+                      {collaboratori.length > 0 && (
+                        <div className="mt-3">
+                          <CollaboratoreSelect preventivo={preventivo} />
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="mt-3 flex gap-2">
@@ -386,6 +467,9 @@ export function PreventiviLista({ preventiviIniziali }: { preventiviIniziali: Pr
                 Prezzo
               </th>
               <th className="px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-brand-muted">
+                Collaboratore
+              </th>
+              <th className="px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-brand-muted">
                 Stato
               </th>
               <th className="px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-brand-muted">
@@ -441,6 +525,9 @@ export function PreventiviLista({ preventiviIniziali }: { preventiviIniziali: Pr
                     <td className="whitespace-nowrap px-4 py-3.5 text-sm font-semibold text-brand-text">
                       {preventivo.prezzo != null ? formatEuro(Number(preventivo.prezzo)) : "—"}
                     </td>
+                    <td className="px-4 py-3.5">
+                      {collaboratori.length > 0 ? <CollaboratoreSelect preventivo={preventivo} /> : "—"}
+                    </td>
                     <td className="whitespace-nowrap px-4 py-3.5">
                       <StatoSelect preventivo={preventivo} />
                     </td>
@@ -485,7 +572,7 @@ export function PreventiviLista({ preventiviIniziali }: { preventiviIniziali: Pr
               })
             ) : (
               <tr>
-                <td colSpan={7}>
+                <td colSpan={8}>
                   <EmptyState filtro={filtro} />
                 </td>
               </tr>

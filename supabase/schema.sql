@@ -241,3 +241,53 @@ on abbonamenti for all
 to authenticated
 using (true)
 with check (true);
+
+-- =============================================================================
+-- Sezione "Collaboratori" (migrazione "create_collaboratori_tables").
+-- Aziende, freelancer e persone con percentuale sui preventivi chiusi
+-- e importi da pagare. CRUD riservato al ruolo authenticated.
+-- =============================================================================
+
+create table collaboratori (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamp with time zone default now(),
+  nome text not null,
+  tipo text not null check (tipo in ('azienda', 'freelancer', 'persona')),
+  contatto text,
+  iban text,
+  percentuale numeric(5,2) not null default 0
+    check (percentuale >= 0 and percentuale <= 100),
+  note text,
+  attivo boolean not null default true
+);
+
+create table collaboratore_lavori (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamp with time zone default now(),
+  collaboratore_id uuid not null references collaboratori(id) on delete cascade,
+  preventivo_id uuid references preventivi(id) on delete set null,
+  cliente text,
+  descrizione text,
+  prezzo numeric(12,2) not null,
+  percentuale numeric(5,2) not null
+    check (percentuale >= 0 and percentuale <= 100),
+  importo_pagato numeric(12,2) not null default 0
+    check (importo_pagato >= 0),
+  data date not null default current_date,
+  note text
+);
+
+alter table collaboratori enable row level security;
+alter table collaboratore_lavori enable row level security;
+
+create policy "Solo autenticati gestiscono collaboratori"
+on collaboratori for all
+to authenticated
+using (true)
+with check (true);
+
+create policy "Solo autenticati gestiscono collaboratore_lavori"
+on collaboratore_lavori for all
+to authenticated
+using (true)
+with check (true);

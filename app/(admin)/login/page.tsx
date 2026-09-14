@@ -21,7 +21,15 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
-      setErrorMessage("Credenziali non valide");
+      const isNetworkError =
+        error.name === "AuthRetryableFetchError" ||
+        error.status === 0 ||
+        /fetch|network|failed/i.test(error.message);
+      setErrorMessage(
+        isNetworkError
+          ? "Impossibile contattare il database. Controlla che il progetto Supabase sia attivo."
+          : "Credenziali non valide"
+      );
       setIsSubmitting(false);
       return;
     }

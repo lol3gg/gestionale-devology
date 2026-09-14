@@ -51,9 +51,15 @@ export function DashboardSidebar({
   const widthClass = !hydrated ? "w-72" : collapsed ? "w-[4.75rem]" : "w-72";
 
   return (
-    <aside
-      className={`hidden shrink-0 flex-col border-r border-brand-border bg-brand-elevated/80 backdrop-blur-xl transition-[width] duration-200 ease-out lg:flex ${widthClass}`}
-    >
+    <>
+      {/* Spacer: tiene lo spazio nel flex, così il contenuto non passa sotto la sidebar fissa. */}
+      <div
+        aria-hidden
+        className={`hidden shrink-0 transition-[width] duration-200 ease-out lg:block ${widthClass}`}
+      />
+      <aside
+        className={`fixed inset-y-0 left-0 z-30 hidden h-dvh max-h-dvh flex-col overflow-hidden border-r border-brand-border bg-brand-elevated/80 backdrop-blur-xl transition-[width] duration-200 ease-out lg:flex ${widthClass}`}
+      >
       <div
         className={`flex items-center border-b border-brand-border py-5 ${
           collapsed ? "flex-col gap-3 px-2" : "gap-3 px-4"
@@ -95,7 +101,7 @@ export function DashboardSidebar({
         collapsed={collapsed}
       />
 
-      <div className={`space-y-3 border-t border-brand-border ${collapsed ? "p-2" : "p-4"}`}>
+      <div className={`mt-auto space-y-3 border-t border-brand-border ${collapsed ? "p-2" : "p-4"}`}>
         <LinkClienteButton variant={collapsed ? "compact" : "sidebar"} />
 
         <div
@@ -113,5 +119,6 @@ export function DashboardSidebar({
         </div>
       </div>
     </aside>
+    </>
   );
 }
