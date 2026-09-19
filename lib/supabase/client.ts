@@ -1,11 +1,15 @@
 import { createBrowserClient } from "@supabase/ssr";
 
+let browserClient: ReturnType<typeof createBrowserClient> | null = null;
+
 /**
- * Supabase client per componenti "use client" (browser).
+ * Un solo client browser: evita più connessioni Realtime/auth a ogni click.
  */
 export function createClient() {
-  return createBrowserClient(
+  if (browserClient) return browserClient;
+  browserClient = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
+  return browserClient;
 }

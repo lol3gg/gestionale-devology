@@ -1,13 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
-import { regenerateSignedUrl } from "@/lib/storage/signedUrl";
 import { NuovoPreventivoForm, type RichiestaPreventivoOption } from "./_components/NuovoPreventivoForm";
 import { PreventiviLista, type PreventivoListaItem } from "./_components/PreventiviLista";
 import type { CollaboratoreOption } from "@/lib/collaboratori/types";
 
 export const dynamic = "force-dynamic";
-
-const PREVENTIVI_BUCKET = "preventivi-clienti";
-const SIGNED_URL_EXPIRY_SECONDS = 60 * 60 * 4; // 4 ore
 
 type RichiestaRef = { id: string; nome: string; cognome: string } | null;
 
@@ -78,8 +74,7 @@ export default async function PreventiviPage() {
 
   const richiestaById = new Map((richiesteRows ?? []).map((row) => [row.id, row]));
 
-  const preventivi: PreventivoListaItem[] = await Promise.all(
-    preventiviRows.map(async (preventivo) => {
+  const preventivi: PreventivoListaItem[] = preventiviRows.map((preventivo) => {
       const lavoro = lavoroPerPreventivo.get(preventivo.id);
       const collaboratore = lavoro
         ? collaboratori.find((item) => item.id === lavoro.collaboratore_id)
@@ -111,15 +106,9 @@ export default async function PreventiviPage() {
         collaboratoreNome: collaboratore?.nome ?? null,
         daRichiesta: Boolean(preventivo.richiesta_id),
         richiesta,
-        downloadUrl: await regenerateSignedUrl(
-          supabase,
-          PREVENTIVI_BUCKET,
-          preventivo.url_file,
-          SIGNED_URL_EXPIRY_SECONDS
-        ),
+        downloadUrl: preventivo.url_file || null,
       };
-    })
-  );
+    });
 
   return (
     <div className="space-y-6">

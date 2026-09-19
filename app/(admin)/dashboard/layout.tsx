@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import Image from "next/image";
-import { createClient } from "@/lib/supabase/server";
+import { cookies } from "next/headers";
 import { DashboardNav } from "./_components/DashboardNav";
 import { DashboardSidebar } from "./_components/DashboardSidebar";
 import { FullscreenToggle } from "./_components/FullscreenToggle";
@@ -10,28 +10,10 @@ import { LockDashboardScroll } from "./_components/LockDashboardScroll";
 import { LogoutButton } from "./_components/LogoutButton";
 import { LiveRefresh } from "./_components/LiveRefresh";
 import { RegisterServiceWorker } from "./_components/RegisterServiceWorker";
-import { addGiorni, oggiIsoRoma } from "@/lib/calendario/date";
-import { GIORNI_RICHIAMO_PREVENTIVO } from "@/lib/preventivi/richiamo";
-import { STATI_PREVENTIVO_ATTIVI } from "@/lib/preventivi/stato";
+import { readAuthFromCookies } from "@/lib/auth/cookieSession";
 
-export default async function DashboardLayout({ children }: { children: ReactNode }) {
-  const supabase = createClient();
-
-  const limiteRichiamo = addGiorni(oggiIsoRoma(), -GIORNI_RICHIAMO_PREVENTIVO);
-  const [{ data: userData }, { count: nuoveCount }, { count: archivioCount }, richiamiResult] =
-    await Promise.all([
-      supabase.auth.getUser(),
-      supabase.from("richieste").select("id", { count: "exact", head: true }).eq("stato", "nuovo"),
-      supabase.from("richieste").select("id", { count: "exact", head: true }).eq("stato", "archiviato"),
-      supabase
-        .from("preventivi")
-        .select("id", { count: "exact", head: true })
-        .in("stato", STATI_PREVENTIVO_ATTIVI)
-        .lte("data_invio", limiteRichiamo),
-    ]);
-  const richiamiCount = richiamiResult.error ? 0 : richiamiResult.count ?? 0;
-
-  const email = userData.user?.email ?? "Admin";
+export default function DashboardLayout({ children }: { children: ReactNode }) {
+  const email = readAuthFromCookies(cookies().getAll())?.email ?? "Admin";
   const initials = email.slice(0, 2).toUpperCase();
 
   return (
@@ -39,22 +21,14 @@ export default async function DashboardLayout({ children }: { children: ReactNod
       <LockDashboardScroll />
       <RegisterServiceWorker />
       <LiveRefresh />
-      <DashboardSidebar
-        email={email}
-        initials={initials}
-        nuoveCount={nuoveCount ?? 0}
-        archivioCount={archivioCount ?? 0}
-        richiamiCount={richiamiCount}
-      />
+      <DashboardSidebar email={email} initials={initials} />
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-        {/* Desktop: controlli fissi in alto a destra. */}
         <div className="fixed right-6 top-6 z-50 hidden items-center gap-2 lg:flex">
           <ThemeToggle />
           <FullscreenToggle />
         </div>
 
-        {/* Mobile header compatto */}
         <header className="z-40 flex items-center justify-between gap-3 border-b border-brand-border bg-brand-elevated/90 px-3 py-3 backdrop-blur-xl pt-safe sm:px-4 lg:hidden">
           <span className="flex min-w-0 items-center gap-2 text-sm font-bold tracking-[-0.02em] text-brand-text">
             <Image
@@ -77,14 +51,8 @@ export default async function DashboardLayout({ children }: { children: ReactNod
           <div className="mx-auto max-w-[1600px]">{children}</div>
         </main>
 
-        {/* Mobile: tab bar fissa in basso */}
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-brand-border bg-brand-elevated/95 backdrop-blur-xl lg:hidden">
-          <DashboardNav
-            nuoveCount={nuoveCount ?? 0}
-            archivioCount={archivioCount ?? 0}
-            richiamiCount={richiamiCount}
-            variant="bottom"
-          />
+          <DashboardNav variant="bottom" />
         </div>
       </div>
     </div>

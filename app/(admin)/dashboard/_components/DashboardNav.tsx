@@ -1,8 +1,10 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Archive, CalendarDays, FileText, Inbox, Users, Wallet } from "lucide-react";
+import { loadNavCountsClient } from "@/lib/dashboard/navCountsClient";
 
 /**
  * Sezioni "di primo livello" note, usate per capire se la rotta corrente
@@ -66,24 +68,28 @@ const NAV_ITEMS = [
 ];
 
 type DashboardNavProps = {
-  nuoveCount: number;
-  archivioCount?: number;
-  richiamiCount?: number;
   variant?: "sidebar" | "mobile" | "bottom";
   collapsed?: boolean;
 };
 
-export function DashboardNav({
-  nuoveCount,
-  archivioCount = 0,
-  richiamiCount = 0,
-  variant = "sidebar",
-  collapsed = false,
-}: DashboardNavProps) {
+export function DashboardNav({ variant = "sidebar", collapsed = false }: DashboardNavProps) {
   const pathname = usePathname() ?? "";
+  const router = useRouter();
+  const [nuoveCount, setNuoveCount] = useState(0);
+  const [archivioCount, setArchivioCount] = useState(0);
+  const [richiamiCount, setRichiamiCount] = useState(0);
   const isBottom = variant === "bottom";
   const isMobile = variant === "mobile";
   const isIconOnly = !isMobile && !isBottom && collapsed;
+
+  useEffect(() => {
+    NAV_ITEMS.forEach((item) => router.prefetch(item.href));
+    void loadNavCountsClient().then((counts) => {
+      setNuoveCount(counts.nuoveCount);
+      setArchivioCount(counts.archivioCount);
+      setRichiamiCount(counts.richiamiCount);
+    });
+  }, [router]);
 
   return (
     <nav
@@ -115,6 +121,8 @@ export function DashboardNav({
             <Link
               key={item.href}
               href={item.href}
+              prefetch
+              onPointerEnter={() => router.prefetch(item.href)}
               className={`relative flex min-h-[52px] flex-col items-center justify-center gap-0.5 rounded-xl px-0.5 py-2 text-[9px] font-semibold leading-tight transition active:scale-[0.97] sm:text-[10px] ${
                 isActive ? "text-brand-accent-light" : "text-brand-muted"
               }`}
@@ -150,6 +158,8 @@ export function DashboardNav({
           <Link
             key={item.href}
             href={item.href}
+            prefetch
+            onPointerEnter={() => router.prefetch(item.href)}
             title={isIconOnly ? item.label : undefined}
             aria-label={isIconOnly ? item.label : undefined}
             className={`relative flex items-center rounded-xl text-sm font-semibold transition ${

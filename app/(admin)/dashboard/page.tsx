@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -8,12 +9,9 @@ import {
   parseDashboardQuery,
 } from "@/lib/richieste/dashboardQuery";
 import { STATO_OPTIONS, type StatoRichiesta } from "@/lib/richieste/stato";
-import { addGiorni, minutiCorrentiRoma, oggiIsoRoma } from "@/lib/calendario/date";
-import { filtraProssimeCall, RIEPILOGO_GIORNI } from "@/lib/calendario/prossime";
-import { listCalls } from "@/lib/calendario/store";
 import { DashboardOverview } from "./_components/DashboardOverview";
 import { EliminataToast } from "./_components/EliminataToast";
-import { ProssimeCallRiepilogo } from "./_components/ProssimeCallRiepilogo";
+import { ProssimeCallServer } from "./_components/ProssimeCallServer";
 import type { RichiestaListItem } from "./_components/RichiesteTable";
 
 export const dynamic = "force-dynamic";
@@ -40,27 +38,6 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     redirect("/dashboard/archivio");
   }
 
-  // Conteggi globali per le card KPI (solo richieste non archiviate).
-  const kpiQueries = await Promise.all([
-    supabase
-      .from("richieste")
-      .select("id", { count: "exact", head: true })
-      .neq("stato", "archiviato"),
-    ...STATI_ATTIVI.map((option) =>
-      supabase
-        .from("richieste")
-        .select("id", { count: "exact", head: true })
-        .eq("stato", option.value)
-    ),
-  ]);
-
-  const totaleGlobale = kpiQueries[0].count ?? 0;
-  const conteggiPerStato: Partial<Record<StatoRichiesta, number>> = {};
-  STATI_ATTIVI.forEach((option, index) => {
-    conteggiPerStato[option.value] = kpiQueries[index + 1].count ?? 0;
-  });
-
-  // Lista paginata + count exact dei soli risultati filtrati (senza archiviate).
   let listQuery = supabase
     .from("richieste")
     .select(
@@ -85,12 +62,22 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const from = (pagina - 1) * RICHIESTE_PER_PAGINA;
   const to = from + RICHIESTE_PER_PAGINA - 1;
 
-  const { data: richieste, error, count } = await listQuery.range(from, to);
+  const [listResult, ...statiCounts] = await Promise.all([
+    listQuery.range(from, to),
+    ...STATI_ATTIVI.map((option) =>
+      supabase.from("richieste").select("id", { count: "exact", head: true }).eq("stato", option.value)
+    ),
+  ]);
 
-  const oggi = oggiIsoRoma();
-  const minutiOra = minutiCorrentiRoma();
-  const { calls: callsFinestra } = await listCalls(supabase, oggi, addGiorni(oggi, RIEPILOGO_GIORNI));
-  const prossimeCall = filtraProssimeCall(callsFinestra, oggi, minutiOra);
+  const conteggiPerStato: Partial<Record<StatoRichiesta, number>> = {};
+  let totaleGlobale = 0;
+  STATI_ATTIVI.forEach((option, index) => {
+    const count = statiCounts[index]?.count ?? 0;
+    conteggiPerStato[option.value] = count;
+    totaleGlobale += count;
+  });
+
+  const { data: richieste, error, count } = listResult;
 
   const totaleFiltrato = count ?? 0;
   const totalePagine = Math.max(1, Math.ceil(totaleFiltrato / RICHIESTE_PER_PAGINA));
@@ -111,14 +98,16 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         </h1>
         <p className="mt-1 text-sm text-brand-muted">
           Richieste attive dal form pubblico. Quelle archiviate sono nella sezione{" "}
-          <a href="/dashboard/archivio" className="font-semibold text-brand-accent-light hover:underline">
+          <Link href="/dashboard/archivio" className="font-semibold text-brand-accent-light hover:underline">
             Archivio cliente
-          </a>
+          </Link>
           .
         </p>
       </div>
 
-      <ProssimeCallRiepilogo calls={prossimeCall} oggi={oggi} minutiOra={minutiOra} />
+      <Suspense fallback={<div className="h-28 animate-pulse rounded-brand-lg bg-brand-elevated" />}>
+        <ProssimeCallServer />
+      </Suspense>
 
       <Suspense fallback={null}>
         <EliminataToast />

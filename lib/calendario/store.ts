@@ -95,29 +95,51 @@ async function saveToStorage(supabase: SupabaseClient, calls: CallAppuntamento[]
   }
 }
 
+// Il calendario vive nello Storage: evita il round-trip fallito su call_appuntamenti a ogni click.
+let knownMissingTable = true;
+let storageCache: { at: number; calls: CallAppuntamento[] } | null = null;
+const STORAGE_CACHE_MS = 15_000;
+
+export function invalidaCalendarioCache() {
+  storageCache = null;
+}
+
+async function loadFromStorageCached(supabase: SupabaseClient) {
+  if (storageCache && Date.now() - storageCache.at < STORAGE_CACHE_MS) {
+    return storageCache.calls;
+  }
+  const calls = await loadFromStorage(supabase);
+  storageCache = { at: Date.now(), calls };
+  return calls;
+}
+
 export async function listCalls(
   supabase: SupabaseClient,
   from: string,
   to: string
 ): Promise<{ calls: CallAppuntamento[]; error: string | null; missingTable: boolean }> {
-  const { data, error } = await supabase
-    .from("call_appuntamenti")
-    .select("id, giorno, ora, durata_minuti, azienda, email, telefono, attivita")
-    .gte("giorno", from)
-    .lte("giorno", to)
-    .order("giorno", { ascending: true })
-    .order("ora", { ascending: true });
+  if (!knownMissingTable) {
+    const { data, error } = await supabase
+      .from("call_appuntamenti")
+      .select("id, giorno, ora, durata_minuti, azienda, email, telefono, attivita")
+      .gte("giorno", from)
+      .lte("giorno", to)
+      .order("giorno", { ascending: true })
+      .order("ora", { ascending: true });
 
-  if (!error) {
-    return { calls: (data ?? []).map(mapRow), error: null, missingTable: false };
-  }
+    if (!error) {
+      knownMissingTable = false;
+      return { calls: (data ?? []).map(mapRow), error: null, missingTable: false };
+    }
 
-  if (!isMissingTable(error)) {
-    return { calls: [], error: error.message, missingTable: false };
+    if (!isMissingTable(error)) {
+      return { calls: [], error: error.message, missingTable: false };
+    }
+    knownMissingTable = true;
   }
 
   try {
-    const stored = await loadFromStorage(supabase);
+    const stored = await loadFromStorageCached(supabase);
     const calls = stored
       .filter((call) => call.giorno >= from && call.giorno <= to)
       .sort((a, b) => a.giorno.localeCompare(b.giorno) || a.ora.localeCompare(b.ora));
@@ -178,6 +200,7 @@ export async function insertCall(
     };
     calls.push(call);
     await saveToStorage(supabase, calls);
+    invalidaCalendarioCache();
     return { ok: true, call };
   } catch (storageError) {
     return {
@@ -224,6 +247,7 @@ export async function patchCall(
     const call: CallAppuntamento = { id, ...row };
     calls[index] = call;
     await saveToStorage(supabase, calls);
+    invalidaCalendarioCache();
     return { ok: true, call };
   } catch (storageError) {
     return {
@@ -246,6 +270,7 @@ export async function removeCall(supabase: SupabaseClient, id: string): Promise<
       supabase,
       calls.filter((call) => call.id !== id)
     );
+    invalidaCalendarioCache();
     return { ok: true, deletedId: id };
   } catch (storageError) {
     return {

@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { subscribeLiveSync } from "@/lib/live/browser";
 
 export function LiveRefresh() {
   const router = useRouter();
+  const [, startTransition] = useTransition();
   const timer = useRef<number | null>(null);
 
   useEffect(() => {
@@ -13,26 +14,18 @@ export function LiveRefresh() {
       if (timer.current != null) return;
       timer.current = window.setTimeout(() => {
         timer.current = null;
-        router.refresh();
-      }, 200);
+        startTransition(() => {
+          router.refresh();
+        });
+      }, 500);
     }
 
     const stop = subscribeLiveSync(refresh);
-
-    function onVisible() {
-      if (document.visibilityState === "visible") refresh();
-    }
-
-    document.addEventListener("visibilitychange", onVisible);
-    window.addEventListener("focus", onVisible);
-
     return () => {
       stop();
-      document.removeEventListener("visibilitychange", onVisible);
-      window.removeEventListener("focus", onVisible);
       if (timer.current != null) window.clearTimeout(timer.current);
     };
-  }, [router]);
+  }, [router, startTransition]);
 
   return null;
 }

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { extractStoragePath } from "@/lib/storage/signedUrl";
+import { invalidaNavCounts } from "@/lib/dashboard/navCounts";
 import { notificaLiveSync } from "@/lib/live/sync";
 import type { StatoRichiesta } from "@/lib/richieste/stato";
 
@@ -66,6 +67,7 @@ export async function updateStato(richiestaId: string, stato: StatoRichiesta) {
     throw new Error(`Impossibile aggiornare lo stato: ${error.message}`);
   }
 
+  invalidaNavCounts();
   await notificaLiveSync();
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/archivio");
@@ -181,6 +183,7 @@ export async function eliminaRichiesta(richiestaId: string) {
     throw new Error(`Impossibile eliminare la richiesta: ${deleteError.message}`);
   }
 
+  invalidaNavCounts();
   await notificaLiveSync();
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/archivio");

@@ -12,18 +12,9 @@ const STORAGE_KEY = "devology-sidebar-collapsed";
 type DashboardSidebarProps = {
   email: string;
   initials: string;
-  nuoveCount: number;
-  archivioCount: number;
-  richiamiCount: number;
 };
 
-export function DashboardSidebar({
-  email,
-  initials,
-  nuoveCount,
-  archivioCount,
-  richiamiCount,
-}: DashboardSidebarProps) {
+export function DashboardSidebar({ email, initials }: DashboardSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [hydrated, setHydrated] = useState(false);
 
@@ -97,12 +88,7 @@ export function DashboardSidebar({
         </button>
       </div>
 
-      <DashboardNav
-        nuoveCount={nuoveCount}
-        archivioCount={archivioCount}
-        richiamiCount={richiamiCount}
-        collapsed={collapsed}
-      />
+      <DashboardNav collapsed={collapsed} />
 
       <div className={`mt-auto space-y-3 border-t border-brand-border ${collapsed ? "p-2" : "p-4"}`}>
         <LinkClienteButton variant={collapsed ? "compact" : "sidebar"} />
