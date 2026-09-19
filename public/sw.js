@@ -1,3 +1,7 @@
+// Cambia questa stringa a ogni logica nuova, così i telefoni prendono il SW aggiornato.
+const SW_VERSION = "2026-09-19-build-check";
+void SW_VERSION;
+
 self.addEventListener("install", (event) => {
   event.waitUntil(self.skipWaiting());
 });
