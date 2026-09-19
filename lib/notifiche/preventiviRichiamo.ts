@@ -87,7 +87,7 @@ export async function listPreventiviRichiamo(
 ): Promise<PreventivoRichiamoItem[]> {
   const selectLungo =
     "id, data_invio, nome, cognome, azienda, numero_preventivo, stato, richiesta_id";
-  let { data, error } = await supabase
+  const { data, error } = await supabase
     .from("preventivi")
     .select(selectLungo)
     .in("stato", STATI_PREVENTIVO_ATTIVI)
