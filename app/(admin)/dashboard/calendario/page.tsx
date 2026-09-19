@@ -90,9 +90,9 @@ export default async function CalendarioPage({
         </div>
       </div>
 
-      <NotificheCallMattina />
-
       <CalendarioSettimana lunedi={lunedi} oggi={oggi} giornoIniziale={riferimento} calls={calls} />
+
+      <NotificheCallMattina />
     </div>
   );
 }
