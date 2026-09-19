@@ -165,6 +165,9 @@ export function CalendarioSettimana({ lunedi, oggi, calls }: CalendarioSettimana
               key={giorno}
               type="button"
               onClick={() => setSelectedDay(giorno)}
+              aria-label={`${GIORNI_SETT_BREVI[index]} ${Number(giorno.slice(8))}${
+                count === 0 ? "" : count === 1 ? ", 1 call" : `, ${count} call`
+              }`}
               className={`min-w-[3.5rem] flex-1 shrink-0 rounded-xl border px-2 py-2 text-center ${
                 isSelected
                   ? "border-brand-accent/50 bg-brand-accent/15 text-brand-text"
@@ -175,8 +178,8 @@ export function CalendarioSettimana({ lunedi, oggi, calls }: CalendarioSettimana
               <span className={`block text-sm font-bold ${isToday ? "text-brand-accent-light" : ""}`}>
                 {giorno.slice(8)}
               </span>
-              <span className="mt-0.5 block text-[10px] text-brand-muted">
-                {count === 0 ? "—" : count === 1 ? "1 call" : `${count} call`}
+              <span className="mt-1 flex h-1.5 items-center justify-center" aria-hidden>
+                {count > 0 ? <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /> : null}
               </span>
             </button>
           );

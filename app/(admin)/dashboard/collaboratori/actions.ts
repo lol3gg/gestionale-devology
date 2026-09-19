@@ -2,12 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { notificaLiveSync } from "@/lib/live/sync";
 import { importoDovuto } from "@/lib/collaboratori/calcoli";
 import { generaTokenCollaboratore } from "@/lib/collaboratori/token";
 import { removeCollaboratoreToken, saveCollaboratoreToken } from "@/lib/collaboratori/portale";
 import type { TipoCollaboratore } from "@/lib/collaboratori/types";
 
-function revalidateCollaboratori() {
+async function revalidateCollaboratori() {
+  await notificaLiveSync();
   revalidatePath("/dashboard/collaboratori");
   revalidatePath("/dashboard/preventivi");
   revalidatePath("/dashboard");
@@ -60,7 +62,7 @@ export async function createCollaboratore(input: NuovoCollaboratoreInput) {
       // Il collaboratore è salvato: il token verrà generato al prossimo caricamento della pagina.
     }
   }
-  revalidateCollaboratori();
+  await revalidateCollaboratori();
 }
 
 export async function updateCollaboratore(
@@ -74,7 +76,7 @@ export async function updateCollaboratore(
     throw new Error(`Impossibile aggiornare il collaboratore: ${error.message}`);
   }
 
-  revalidateCollaboratori();
+  await revalidateCollaboratori();
 }
 
 export async function deleteCollaboratore(id: string) {
@@ -90,7 +92,7 @@ export async function deleteCollaboratore(id: string) {
   } catch {
     // Collaboratore già eliminato dalla tabella.
   }
-  revalidateCollaboratori();
+  await revalidateCollaboratori();
 }
 
 export type NuovoLavoroInput = {
@@ -125,7 +127,7 @@ export async function createLavoro(input: NuovoLavoroInput) {
     throw new Error(`Impossibile salvare il lavoro: ${error.message}`);
   }
 
-  revalidateCollaboratori();
+  await revalidateCollaboratori();
 }
 
 export async function updateLavoroPercentuale(id: string, percentuale: number) {
@@ -136,7 +138,7 @@ export async function updateLavoroPercentuale(id: string, percentuale: number) {
     throw new Error(`Impossibile aggiornare la percentuale: ${error.message}`);
   }
 
-  revalidateCollaboratori();
+  await revalidateCollaboratori();
 }
 
 export async function registraPagamento(id: string, importo: number) {
@@ -163,7 +165,7 @@ export async function registraPagamento(id: string, importo: number) {
     throw new Error(`Impossibile registrare il pagamento: ${error.message}`);
   }
 
-  revalidateCollaboratori();
+  await revalidateCollaboratori();
 }
 
 export async function pagaResiduoLavoro(id: string) {
@@ -188,7 +190,7 @@ export async function pagaResiduoLavoro(id: string) {
     throw new Error(`Impossibile segnare il pagamento: ${error.message}`);
   }
 
-  revalidateCollaboratori();
+  await revalidateCollaboratori();
 }
 
 export async function pagaTuttoCollaboratore(collaboratoreId: string) {
@@ -214,7 +216,7 @@ export async function pagaTuttoCollaboratore(collaboratoreId: string) {
     }
   }
 
-  revalidateCollaboratori();
+  await revalidateCollaboratori();
 }
 
 export async function deleteLavoro(id: string) {
@@ -225,7 +227,7 @@ export async function deleteLavoro(id: string) {
     throw new Error(`Impossibile eliminare il lavoro: ${error.message}`);
   }
 
-  revalidateCollaboratori();
+  await revalidateCollaboratori();
 }
 
 export type AssegnaCollaboratoreInput = {
@@ -250,7 +252,7 @@ export async function assegnaCollaboratoreAPreventivo(input: AssegnaCollaborator
   }
 
   if (!input.collaboratore_id) {
-    revalidateCollaboratori();
+    await revalidateCollaboratori();
     return;
   }
 
@@ -279,5 +281,5 @@ export async function assegnaCollaboratoreAPreventivo(input: AssegnaCollaborator
     throw new Error(`Impossibile collegare il collaboratore: ${error.message}`);
   }
 
-  revalidateCollaboratori();
+  await revalidateCollaboratori();
 }

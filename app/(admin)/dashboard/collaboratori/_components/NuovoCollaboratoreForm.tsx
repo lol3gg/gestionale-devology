@@ -3,6 +3,7 @@
 import { useState, useTransition, type FormEvent } from "react";
 import { Loader2, Plus, X } from "lucide-react";
 import { TIPO_COLLABORATORE_OPTIONS, type TipoCollaboratore } from "@/lib/collaboratori/types";
+import { segnalaModifica } from "@/lib/live/browser";
 import { createCollaboratore } from "../actions";
 
 const INPUT =
@@ -53,6 +54,7 @@ export function NuovoCollaboratoreForm() {
           percentuale: percentualeNumerica,
           note: note.trim() || null,
         });
+        segnalaModifica();
         resetForm();
         setIsOpen(false);
       } catch (error) {

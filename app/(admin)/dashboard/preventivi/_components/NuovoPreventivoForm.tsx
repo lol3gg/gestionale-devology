@@ -4,6 +4,7 @@ import { useMemo, useRef, useState, type ChangeEvent, type FormEvent } from "rea
 import { useRouter } from "next/navigation";
 import { Loader2, Plus, UploadCloud, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { refreshTutti } from "@/lib/live/browser";
 import { assegnaCollaboratoreAPreventivo } from "@/app/(admin)/dashboard/collaboratori/actions";
 import type { CollaboratoreOption } from "@/lib/collaboratori/types";
 import { importoDovuto } from "@/lib/collaboratori/calcoli";
@@ -225,7 +226,7 @@ export function NuovoPreventivoForm({
       } catch (error) {
         setErrorMessage(error instanceof Error ? error.message : "Preventivo salvato, ma il collaboratore non è stato collegato.");
         setIsUploading(false);
-        router.refresh();
+        refreshTutti(router);
         return;
       }
     }
@@ -234,7 +235,7 @@ export function NuovoPreventivoForm({
     setSuccessMessage("Preventivo creato.");
     setIsUploading(false);
     setIsOpen(false);
-    router.refresh();
+    refreshTutti(router);
   }
 
   if (!isOpen) {

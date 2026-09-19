@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { extractStoragePath } from "@/lib/storage/signedUrl";
+import { notificaLiveSync } from "@/lib/live/sync";
 import type { StatoRichiesta } from "@/lib/richieste/stato";
 
 const ALLEGATI_BUCKET = "allegati-clienti";
@@ -65,6 +66,7 @@ export async function updateStato(richiestaId: string, stato: StatoRichiesta) {
     throw new Error(`Impossibile aggiornare lo stato: ${error.message}`);
   }
 
+  await notificaLiveSync();
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/archivio");
   revalidatePath(`/dashboard/${richiestaId}`);
@@ -82,6 +84,7 @@ export async function updateNoteInterne(richiestaId: string, note: string) {
     throw new Error(`Impossibile salvare le note: ${error.message}`);
   }
 
+  await notificaLiveSync();
   revalidatePath(`/dashboard/${richiestaId}`);
 }
 
@@ -111,6 +114,7 @@ export async function updateRichiestaDati(richiestaId: string, dati: RichiestaDa
     throw new Error(`Impossibile aggiornare i dati della richiesta: ${error.message}`);
   }
 
+  await notificaLiveSync();
   revalidatePath("/dashboard");
   revalidatePath(`/dashboard/${richiestaId}`);
 }
@@ -177,6 +181,7 @@ export async function eliminaRichiesta(richiestaId: string) {
     throw new Error(`Impossibile eliminare la richiesta: ${deleteError.message}`);
   }
 
+  await notificaLiveSync();
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/archivio");
   revalidatePath("/dashboard/preventivi");

@@ -2,6 +2,7 @@
 
 import { useState, useTransition, type FormEvent } from "react";
 import { Loader2, Plus, X } from "lucide-react";
+import { segnalaModifica } from "@/lib/live/browser";
 import { createAbbonamento } from "../actions";
 
 const INPUT_CLASSES =
@@ -55,6 +56,7 @@ export function NuovoAbbonamentoForm() {
           data_inizio: dataInizio || null,
           note: note.trim() || null,
         });
+        segnalaModifica();
         resetForm();
         setIsOpen(false);
       } catch (error) {

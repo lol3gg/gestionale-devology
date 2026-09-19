@@ -2,6 +2,7 @@
 
 import { useState, useTransition, type FormEvent } from "react";
 import { Loader2, Plus, X } from "lucide-react";
+import { segnalaModifica } from "@/lib/live/browser";
 import { createCanone } from "../actions";
 import type { TipoCanone } from "@/lib/contabilita/canoni";
 
@@ -80,6 +81,7 @@ export function NuovoCanoneForm() {
           data_inizio: dataInizio || null,
           note: note.trim() || null,
         });
+        segnalaModifica();
         resetForm();
         setIsOpen(false);
       } catch (error) {

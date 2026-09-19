@@ -28,6 +28,7 @@ import {
   getGiorniAllaScadenza,
   tempisticheToIsoDate,
 } from "@/lib/richieste/format";
+import { refreshTutti } from "@/lib/live/browser";
 import { updateRichiestaDati, type TipoCliente } from "../actions";
 
 export type RichiestaDatiIniziali = {
@@ -281,7 +282,7 @@ export function ModificaRichiestaForm({ richiesta }: ModificaRichiestaFormProps)
       setDati(aggiornati);
       setIsEditing(false);
       setShowSaved(true);
-      router.refresh();
+      refreshTutti(router);
       window.setTimeout(() => setShowSaved(false), 2500);
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : "Errore nel salvataggio.");

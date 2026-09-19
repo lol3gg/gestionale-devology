@@ -8,6 +8,7 @@ import { ThemeToggle } from "./_components/ThemeToggle";
 import { LinkClienteButton } from "./_components/LinkClienteButton";
 import { LockDashboardScroll } from "./_components/LockDashboardScroll";
 import { LogoutButton } from "./_components/LogoutButton";
+import { LiveRefresh } from "./_components/LiveRefresh";
 import { RegisterServiceWorker } from "./_components/RegisterServiceWorker";
 import { addGiorni, oggiIsoRoma } from "@/lib/calendario/date";
 import { GIORNI_RICHIAMO_PREVENTIVO } from "@/lib/preventivi/richiamo";
@@ -37,6 +38,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
     <div className="fixed inset-0 flex overflow-hidden bg-brand-bg bg-brand-grid bg-[length:40px_40px]">
       <LockDashboardScroll />
       <RegisterServiceWorker />
+      <LiveRefresh />
       <DashboardSidebar
         email={email}
         initials={initials}

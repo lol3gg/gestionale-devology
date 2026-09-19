@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState, useTransition, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
   CalendarClock,
@@ -27,6 +28,8 @@ import {
   type ContattoCollaboratore,
   type StatoContatto,
 } from "@/lib/collaboratori/types";
+import { LiveRefresh } from "@/app/(admin)/dashboard/_components/LiveRefresh";
+import { refreshTutti } from "@/lib/live/browser";
 
 const INPUT =
   "w-full rounded-lg border border-brand-border-strong bg-brand-surface px-3 py-3 text-base text-brand-text placeholder:text-brand-muted shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-accent sm:py-2 sm:text-sm";
@@ -69,6 +72,7 @@ export function PortaleCollaboratore({
   token: string;
   contatti: ContattoCollaboratore[];
 }) {
+  const router = useRouter();
   const [filtro, setFiltro] = useState<"tutti" | StatoContatto>("tutti");
   const [mostraForm, setMostraForm] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -91,6 +95,7 @@ export function PortaleCollaboratore({
     startTransition(async () => {
       const result = await action();
       if (!result.ok) setErrorMessage(result.error);
+      else refreshTutti(router);
     });
   }
 
@@ -118,11 +123,13 @@ export function PortaleCollaboratore({
         return;
       }
       setImportInfo(`${result.importati} contatti importati, ${result.duplicati} duplicati saltati.`);
+      refreshTutti(router);
     });
   }
 
   return (
     <main className="min-h-dvh bg-brand-bg bg-brand-grid bg-[length:40px_40px] px-4 py-6 pb-16 sm:px-6">
+      <LiveRefresh />
       <div className="mx-auto w-full max-w-lg">
         <Image
           src="/logo/devology-logo-full.svg"

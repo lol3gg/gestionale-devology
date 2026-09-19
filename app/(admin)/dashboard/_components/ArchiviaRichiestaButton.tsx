@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Archive, Loader2 } from "lucide-react";
+import { refreshTutti } from "@/lib/live/browser";
 import { updateStato } from "../actions";
 
 type ArchiviaRichiestaButtonProps = {
@@ -56,8 +57,8 @@ export function ArchiviaRichiestaButton({
     startTransition(async () => {
       try {
         await updateStato(richiestaId, "archiviato");
+        refreshTutti(router);
         router.push("/dashboard/archivio?archiviata=1");
-        router.refresh();
       } catch (error) {
         setErrorMessage(
           error instanceof Error ? error.message : "Errore durante l'archiviazione."

@@ -8,8 +8,12 @@ import {
   parseDashboardQuery,
 } from "@/lib/richieste/dashboardQuery";
 import { STATO_OPTIONS, type StatoRichiesta } from "@/lib/richieste/stato";
+import { addGiorni, minutiCorrentiRoma, oggiIsoRoma } from "@/lib/calendario/date";
+import { filtraProssimeCall, RIEPILOGO_GIORNI } from "@/lib/calendario/prossime";
+import { listCalls } from "@/lib/calendario/store";
 import { DashboardOverview } from "./_components/DashboardOverview";
 import { EliminataToast } from "./_components/EliminataToast";
+import { ProssimeCallRiepilogo } from "./_components/ProssimeCallRiepilogo";
 import type { RichiestaListItem } from "./_components/RichiesteTable";
 
 export const dynamic = "force-dynamic";
@@ -83,6 +87,11 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
   const { data: richieste, error, count } = await listQuery.range(from, to);
 
+  const oggi = oggiIsoRoma();
+  const minutiOra = minutiCorrentiRoma();
+  const { calls: callsFinestra } = await listCalls(supabase, oggi, addGiorni(oggi, RIEPILOGO_GIORNI));
+  const prossimeCall = filtraProssimeCall(callsFinestra, oggi, minutiOra);
+
   const totaleFiltrato = count ?? 0;
   const totalePagine = Math.max(1, Math.ceil(totaleFiltrato / RICHIESTE_PER_PAGINA));
 
@@ -108,6 +117,8 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           .
         </p>
       </div>
+
+      <ProssimeCallRiepilogo calls={prossimeCall} oggi={oggi} minutiOra={minutiOra} />
 
       <Suspense fallback={null}>
         <EliminataToast />

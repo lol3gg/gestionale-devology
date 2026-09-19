@@ -15,6 +15,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { refreshTutti } from "@/lib/live/browser";
 import { extractStoragePath } from "@/lib/storage/signedUrl";
 import { formatEuro } from "@/lib/richieste/format";
 import { getAvatarClasses, getInitials } from "@/lib/richieste/initials";
@@ -204,7 +205,7 @@ export function PreventiviLista({
     }
 
     setUpdatingId(null);
-    startTransition(() => router.refresh());
+    startTransition(() => refreshTutti(router));
   }
 
   async function handleDelete(preventivo: PreventivoListaItem) {
@@ -232,7 +233,7 @@ export function PreventiviLista({
 
     setPreventivi((current) => current.filter((item) => item.id !== preventivo.id));
     setDeletingId(null);
-    startTransition(() => router.refresh());
+    startTransition(() => refreshTutti(router));
   }
 
   async function handleCollaboratoreChange(preventivo: PreventivoListaItem, collaboratoreId: string) {
@@ -260,7 +261,7 @@ export function PreventiviLista({
             : item
         )
       );
-      startTransition(() => router.refresh());
+      startTransition(() => refreshTutti(router));
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Errore nel collegamento del collaboratore.");
     }

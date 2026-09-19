@@ -3,6 +3,7 @@
 import { useState, type ChangeEvent } from "react";
 import { ChevronDown, Loader2 } from "lucide-react";
 import { STATO_OPTIONS, type StatoRichiesta } from "@/lib/richieste/stato";
+import { segnalaModifica } from "@/lib/live/browser";
 import { updateStato } from "../actions";
 
 type StatoSelectProps = {
@@ -25,6 +26,7 @@ export function StatoSelect({ richiestaId, statoIniziale }: StatoSelectProps) {
 
     try {
       await updateStato(richiestaId, nuovoStato);
+      segnalaModifica();
       setIsSaved(true);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Errore nel salvataggio.");

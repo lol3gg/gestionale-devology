@@ -4,6 +4,7 @@ import { useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } fr
 import Image from "next/image";
 import { CheckCircle2, HelpCircle } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { segnalaModifica } from "@/lib/live/browser";
 import {
   SAAS_SPIEGAZIONE,
   SPECIFICHE_TECNICHE_OPTIONS,
@@ -344,6 +345,7 @@ export default function RichiediPage() {
 
       resetForm();
       setStatus("success");
+      segnalaModifica();
     } catch (error) {
       setStatus("error");
       setSubmitError(error instanceof Error ? error.message : "Si è verificato un errore imprevisto.");

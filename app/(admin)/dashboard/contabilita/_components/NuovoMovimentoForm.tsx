@@ -3,6 +3,7 @@
 import { useState, useTransition, type FormEvent } from "react";
 import { Loader2, Plus, X } from "lucide-react";
 import { CATEGORIA_OPTIONS, type CategoriaMovimento, type TipoMovimento } from "@/lib/contabilita/categorie";
+import { segnalaModifica } from "@/lib/live/browser";
 import { createMovimento } from "../actions";
 
 type RichiestaOption = { id: string; nome: string; cognome: string };
@@ -68,6 +69,7 @@ export function NuovoMovimentoForm({ richieste }: { richieste: RichiestaOption[]
           richiesta_id: richiestaId || null,
           note: note.trim() || null,
         });
+        segnalaModifica();
         resetForm();
         setIsOpen(false);
       } catch (error) {

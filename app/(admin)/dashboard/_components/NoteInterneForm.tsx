@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { NotebookPen, Save, Check } from "lucide-react";
+import { segnalaModifica } from "@/lib/live/browser";
 import { updateNoteInterne } from "../actions";
 
 type NoteInterneFormProps = {
@@ -21,6 +22,7 @@ export function NoteInterneForm({ richiestaId, noteIniziali }: NoteInterneFormPr
 
     try {
       await updateNoteInterne(richiestaId, note);
+      segnalaModifica();
       setIsSaved(true);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Errore nel salvataggio.");

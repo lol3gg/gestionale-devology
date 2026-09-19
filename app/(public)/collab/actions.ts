@@ -13,6 +13,7 @@ import {
 } from "@/lib/collaboratori/contattiStore";
 import { parseContattiExcel } from "@/lib/collaboratori/excel";
 import { slugNomeCollaboratore } from "@/lib/collaboratori/token";
+import { notificaLiveSync } from "@/lib/live/sync";
 import type { StatoContatto } from "@/lib/collaboratori/types";
 
 export type PortaleActionResult =
@@ -27,7 +28,8 @@ async function requirePortale(token: string) {
   return { ok: true as const, collaboratore };
 }
 
-function revalidatePortale(nome: string, token: string) {
+async function revalidatePortale(nome: string, token: string) {
+  await notificaLiveSync();
   revalidatePath(`/collab/${slugNomeCollaboratore(nome)}/${token}`);
   revalidatePath(`/collab/${token}`);
   revalidatePath("/dashboard/collaboratori");
@@ -42,7 +44,7 @@ export async function addContattoPortale(
   if (!access.ok) return access;
   try {
     await insertContatto(access.collaboratore.id, input);
-    revalidatePortale(access.collaboratore.nome, token);
+    await revalidatePortale(access.collaboratore.nome, token);
     return { ok: true };
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : "Impossibile salvare il contatto." };
@@ -69,7 +71,7 @@ export async function updateStatoContattoPortale(
       data_richiamo: stato === "da_richiamare" ? extra?.data_richiamo ?? null : null,
       data_call: stato === "call_fissata" ? extra?.data_call ?? null : null,
     });
-    revalidatePortale(access.collaboratore.nome, token);
+    await revalidatePortale(access.collaboratore.nome, token);
     return { ok: true };
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : "Impossibile aggiornare lo stato." };
@@ -81,7 +83,7 @@ export async function deleteContattoPortale(token: string, id: string): Promise<
   if (!access.ok) return access;
   try {
     await removeContatto(access.collaboratore.id, id);
-    revalidatePortale(access.collaboratore.nome, token);
+    await revalidatePortale(access.collaboratore.nome, token);
     return { ok: true };
   } catch (error) {
     return { ok: false, error: error instanceof Error ? error.message : "Impossibile eliminare il contatto." };
@@ -128,7 +130,7 @@ export async function importContattiPortale(
     if (nuovi.length > 0) {
       await insertContattiBulk(access.collaboratore.id, nuovi);
     }
-    revalidatePortale(access.collaboratore.nome, token);
+    await revalidatePortale(access.collaboratore.nome, token);
     return { ok: true, importati: nuovi.length, duplicati };
   } catch (error) {
     return {

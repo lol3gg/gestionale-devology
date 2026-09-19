@@ -3,6 +3,7 @@
 import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { Download, FileText, Loader2, Trash2, UploadCloud } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { segnalaModifica } from "@/lib/live/browser";
 import { extractStoragePath } from "@/lib/storage/signedUrl";
 import { formatEuro } from "@/lib/richieste/format";
 import {
@@ -121,6 +122,8 @@ export function PreventiviManager({
         current.map((item) => (item.id === preventivo.id ? { ...item, stato: previous } : item))
       );
       setErrorMessage(error.message);
+    } else {
+      segnalaModifica();
     }
     setUpdatingId(null);
   }
@@ -205,6 +208,7 @@ export function PreventiviManager({
     );
     resetForm();
     setIsUploading(false);
+    segnalaModifica();
   }
 
   async function handleDelete(preventivo: PreventivoItem) {
@@ -227,6 +231,7 @@ export function PreventiviManager({
 
     setPreventivi((current) => current.filter((item) => item.id !== preventivo.id));
     setDeletingId(null);
+    segnalaModifica();
   }
 
   return (

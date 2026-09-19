@@ -13,6 +13,7 @@ import {
 } from "@/lib/calendario/date";
 import type { CallAppuntamento, CallAppuntamentoInput } from "@/lib/calendario/types";
 import type { CallActionResult } from "@/lib/calendario/store";
+import { refreshTutti } from "@/lib/live/browser";
 import { createCall, deleteCall, updateCall } from "../actions";
 
 const INPUT =
@@ -102,7 +103,7 @@ export function CallFormModal({ draft, onClose, onSaved }: CallFormModalProps) {
               }
         );
         onClose();
-        router.refresh();
+        refreshTutti(router);
       } catch {
         setErrorMessage("Errore nel salvataggio.");
       }
@@ -122,7 +123,7 @@ export function CallFormModal({ draft, onClose, onSaved }: CallFormModalProps) {
         }
         onSaved(result);
         onClose();
-        router.refresh();
+        refreshTutti(router);
       } catch {
         setErrorMessage("Errore nell'eliminazione.");
       }

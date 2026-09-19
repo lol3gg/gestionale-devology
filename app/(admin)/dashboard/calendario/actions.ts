@@ -13,6 +13,7 @@ import {
   oraToMinuti,
 } from "@/lib/calendario/date";
 import { insertCall, listCalls, patchCall, removeCall, type CallActionResult } from "@/lib/calendario/store";
+import { notificaLiveSync } from "@/lib/live/sync";
 import type { CallAppuntamentoInput } from "@/lib/calendario/types";
 import { inviaNotificheMattina } from "@/lib/notifiche/inviaMattina";
 import { notificheConfigurate, vapidPublicKey } from "@/lib/notifiche/send";
@@ -87,7 +88,10 @@ export async function createCall(input: CallAppuntamentoInput): Promise<CallActi
   if (!check.ok) return check;
 
   const result = await insertCall(check.supabase, payload);
-  if (result.ok) revalidateCalendario();
+  if (result.ok) {
+    revalidateCalendario();
+    await notificaLiveSync();
+  }
   return result;
 }
 
@@ -99,13 +103,19 @@ export async function updateCall(id: string, input: CallAppuntamentoInput): Prom
   if (!check.ok) return check;
 
   const result = await patchCall(check.supabase, id, payload);
-  if (result.ok) revalidateCalendario();
+  if (result.ok) {
+    revalidateCalendario();
+    await notificaLiveSync();
+  }
   return result;
 }
 
 export async function deleteCall(id: string): Promise<CallActionResult> {
   const result = await removeCall(createClient(), id);
-  if (result.ok) revalidateCalendario();
+  if (result.ok) {
+    revalidateCalendario();
+    await notificaLiveSync();
+  }
   return result;
 }
 
