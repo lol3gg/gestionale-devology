@@ -1,10 +1,14 @@
 import type { CallAppuntamento } from "@/lib/calendario/types";
 import { addGiorni, durataCall, oraToMinuti } from "@/lib/calendario/date";
 
-/** Finestra del riepilogo in Richieste: oggi + 13 giorni. */
-export const RIEPILOGO_GIORNI = 13;
+/** Finestra del riepilogo in Richieste: tutte le call future entro 90 giorni. */
+export const RIEPILOGO_GIORNI = 90;
 /** Quante call mostrare nel riquadro. */
-export const RIEPILOGO_MAX = 6;
+export const RIEPILOGO_MAX = 8;
+
+export function hrefCalendarioCall(giorno: string) {
+  return `/dashboard/calendario?settimana=${giorno}`;
+}
 
 export function isCallFuturaOInCorso(call: CallAppuntamento, oggi: string, minutiOra: number) {
   if (call.giorno > oggi) return true;

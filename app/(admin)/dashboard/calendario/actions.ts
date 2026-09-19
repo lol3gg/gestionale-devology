@@ -22,6 +22,7 @@ import type { PushSubscriptionJSON } from "@/lib/notifiche/types";
 import { headers } from "next/headers";
 
 function revalidateCalendario() {
+  revalidatePath("/dashboard");
   revalidatePath("/dashboard/calendario");
   revalidatePath("/dashboard/calendario", "page");
 }

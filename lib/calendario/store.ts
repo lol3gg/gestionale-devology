@@ -2,6 +2,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   durataCall,
   intervalliSiSovrappongono,
+  isIsoDate,
+  isOraValida,
   normalizzaOra,
   oraToMinuti,
 } from "@/lib/calendario/date";
@@ -25,6 +27,15 @@ function isMissingTable(error: { code?: string; message?: string } | null | unde
 function isNotFoundStorage(error: { message?: string; statusCode?: string | number; status?: string | number }) {
   const status = error.statusCode ?? error.status;
   return status === 404 || status === "404" || /not found|No such file/i.test(error.message ?? "");
+}
+
+export function isCallValida(call: CallAppuntamento) {
+  return Boolean(
+    call.id &&
+      isIsoDate(call.giorno) &&
+      isOraValida(call.ora) &&
+      String(call.azienda ?? "").trim()
+  );
 }
 
 function mapRow(row: {
@@ -73,7 +84,7 @@ async function loadFromStorage(supabase: SupabaseClient): Promise<CallAppuntamen
   }
   try {
     const parsed = JSON.parse(await data.text()) as { calls?: CallAppuntamento[] };
-    return Array.isArray(parsed.calls) ? parsed.calls.map(mapRow) : [];
+    return Array.isArray(parsed.calls) ? parsed.calls.map(mapRow).filter(isCallValida) : [];
   } catch {
     return [];
   }
@@ -95,10 +106,9 @@ async function saveToStorage(supabase: SupabaseClient, calls: CallAppuntamento[]
   }
 }
 
-// Il calendario vive nello Storage: evita il round-trip fallito su call_appuntamenti a ogni click.
-let knownMissingTable = true;
+let knownMissingTable = false;
 let storageCache: { at: number; calls: CallAppuntamento[] } | null = null;
-const STORAGE_CACHE_MS = 15_000;
+const STORAGE_CACHE_MS = 0;
 
 export function invalidaCalendarioCache() {
   storageCache = null;

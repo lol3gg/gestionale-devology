@@ -21,12 +21,19 @@ import { CallFormModal, callToDraft, type CallFormDraft } from "./CallFormModal"
 type CalendarioSettimanaProps = {
   lunedi: string;
   oggi: string;
+  giornoIniziale?: string;
   calls: CallAppuntamento[];
 };
 
-export function CalendarioSettimana({ lunedi, oggi, calls }: CalendarioSettimanaProps) {
+function giornoDaAprire(giorni: string[], oggi: string, lunedi: string, giornoIniziale?: string) {
+  if (giornoIniziale && giorni.includes(giornoIniziale)) return giornoIniziale;
+  if (giorni.includes(oggi)) return oggi;
+  return lunedi;
+}
+
+export function CalendarioSettimana({ lunedi, oggi, giornoIniziale, calls }: CalendarioSettimanaProps) {
   const giorni = useMemo(() => Array.from({ length: 7 }, (_, index) => addGiorni(lunedi, index)), [lunedi]);
-  const [selectedDay, setSelectedDay] = useState(() => (giorni.includes(oggi) ? oggi : lunedi));
+  const [selectedDay, setSelectedDay] = useState(() => giornoDaAprire(giorni, oggi, lunedi, giornoIniziale));
   const [draft, setDraft] = useState<CallFormDraft | null>(null);
   const [overlay, setOverlay] = useState<CallAppuntamento[]>([]);
   const [removedIds, setRemovedIds] = useState<string[]>([]);
@@ -38,8 +45,8 @@ export function CalendarioSettimana({ lunedi, oggi, calls }: CalendarioSettimana
   }, [calls]);
 
   useEffect(() => {
-    setSelectedDay(giorni.includes(oggi) ? oggi : lunedi);
-  }, [giorni, oggi, lunedi]);
+    setSelectedDay(giornoDaAprire(giorni, oggi, lunedi, giornoIniziale));
+  }, [giorni, oggi, lunedi, giornoIniziale]);
 
   const localCalls = useMemo(() => {
     const byId = new Map(calls.map((call) => [call.id, call]));

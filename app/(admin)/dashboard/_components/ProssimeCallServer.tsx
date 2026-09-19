@@ -6,12 +6,13 @@ import { ProssimeCallRiepilogo } from "./ProssimeCallRiepilogo";
 
 export async function ProssimeCallServer() {
   const oggi = oggiIsoRoma();
+  const minutiOra = minutiCorrentiRoma();
   const { calls } = await listCalls(createClient(), oggi, addGiorni(oggi, RIEPILOGO_GIORNI));
   return (
     <ProssimeCallRiepilogo
-      calls={filtraProssimeCall(calls, oggi, minutiCorrentiRoma())}
+      calls={filtraProssimeCall(calls, oggi, minutiOra)}
       oggi={oggi}
-      minutiOra={minutiCorrentiRoma()}
+      minutiOra={minutiOra}
     />
   );
 }
