@@ -10,6 +10,8 @@ import {
   STATO_PREVENTIVO_OPTIONS,
   type StatoPreventivo,
 } from "@/lib/preventivi/stato";
+import { isDaRicontattare } from "@/lib/preventivi/richiamo";
+import { RichiamoPreventivoBadge } from "../preventivi/_components/RichiamoPreventivoBadge";
 import { StatoPreventivoBadge } from "../preventivi/_components/StatoPreventivoBadge";
 
 const BUCKET = "preventivi-clienti";
@@ -246,7 +248,11 @@ export function PreventiviManager({
           {preventivi.map((preventivo) => (
             <li
               key={preventivo.id}
-              className="flex items-center gap-3 rounded-xl border border-brand-border bg-brand-surface p-3"
+              className={`flex items-center gap-3 rounded-xl border p-3 ${
+                isDaRicontattare(preventivo.data_invio, preventivo.stato)
+                  ? "border-amber-400/40 bg-amber-500/10"
+                  : "border-brand-border bg-brand-surface"
+              }`}
             >
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-elevated text-brand-accent-light ring-1 ring-inset ring-brand-border">
                 <FileText className="h-4 w-4" />
@@ -260,6 +266,10 @@ export function PreventiviManager({
                   {preventivo.prezzo != null ? ` · ${formatEuro(Number(preventivo.prezzo))}` : ""}
                 </p>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <RichiamoPreventivoBadge
+                    dataInvio={preventivo.data_invio}
+                    stato={preventivo.stato}
+                  />
                   <StatoPreventivoBadge stato={preventivo.stato || STATO_PREVENTIVO_DEFAULT} />
                   <select
                     value={preventivo.stato || STATO_PREVENTIVO_DEFAULT}

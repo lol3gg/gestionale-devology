@@ -11,6 +11,7 @@ import {
 } from "@/lib/calendario/date";
 import { listCalls } from "@/lib/calendario/store";
 import { CalendarioSettimana } from "./_components/CalendarioSettimana";
+import { NotificheCallMattina } from "./_components/NotificheCallMattina";
 
 export const dynamic = "force-dynamic";
 
@@ -48,9 +49,8 @@ export default async function CalendarioPage({
           Calendario
         </h1>
         <p className="mt-1 text-sm text-brand-muted">
-          Fasce ogni 10 minuti, dalle 16:00 alle 19:30. Una call occupa 30 minuti e chiude gli slot dopo:
-          se serve, in modifica puoi accorciare o allungare. Serve il nome dell&apos;azienda; email,
-          cellulare e attività sono facoltativi.
+          Crea una call con giorno, orario e durata. Se l&apos;orario è già occupato, non si salva.
+          In giornata vedi solo le call fissate.
         </p>
       </div>
 
@@ -84,11 +84,13 @@ export default async function CalendarioPage({
                 <CalendarDays className="h-3.5 w-3.5 text-brand-muted" />
                 {oggiCalls.length > 0 ? "Nessuna altra call oggi" : "Nessuna call oggi"}
               </p>
-              <p className="mt-0.5 text-xs text-brand-muted">Clicca uno slot libero per fissarne una</p>
+              <p className="mt-0.5 text-xs text-brand-muted">Clicca Nuova call per fissarne una</p>
             </>
           )}
         </div>
       </div>
+
+      <NotificheCallMattina />
 
       <CalendarioSettimana lunedi={lunedi} oggi={oggi} calls={calls} />
     </div>

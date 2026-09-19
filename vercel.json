@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/call-mattina",
+      "schedule": "50 5 * * *"
+    },
+    {
+      "path": "/api/cron/call-mattina",
+      "schedule": "50 6 * * *"
+    }
+  ]
+}

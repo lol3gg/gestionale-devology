@@ -9,6 +9,7 @@ import {
   Download,
   FileText,
   Loader2,
+  Phone,
   SearchX,
   Trash2,
   Wallet,
@@ -26,15 +27,18 @@ import {
   isPreventivoAttivo,
   type StatoPreventivo,
 } from "@/lib/preventivi/stato";
+import { isDaRicontattare } from "@/lib/preventivi/richiamo";
+import { RichiamoPreventivoBadge } from "./RichiamoPreventivoBadge";
 import { StatoPreventivoBadge } from "./StatoPreventivoBadge";
 
 const BUCKET = "preventivi-clienti";
 
-type FiltroPreventivi = "tutti" | "attivi" | "non_attivi";
+type FiltroPreventivi = "tutti" | "attivi" | "da_ricontattare" | "non_attivi";
 
 const FILTRI: { id: FiltroPreventivi; label: string }[] = [
   { id: "tutti", label: "Tutti" },
   { id: "attivi", label: "Attivi" },
+  { id: "da_ricontattare", label: "Da ricontattare" },
   { id: "non_attivi", label: "Non attivi" },
 ];
 
@@ -108,7 +112,9 @@ function EmptyState({ filtro }: { filtro: FiltroPreventivi }) {
           ? "Nessun preventivo caricato."
           : filtro === "attivi"
             ? "Nessun preventivo attivo."
-            : "Nessun preventivo non attivo."}
+            : filtro === "da_ricontattare"
+              ? "Nessun cliente da ricontattare."
+              : "Nessun preventivo non attivo."}
       </p>
       <p className="text-xs text-brand-muted">
         {filtro === "tutti"
@@ -150,12 +156,25 @@ export function PreventiviLista({
     () => preventivi.filter((item) => !isPreventivoAttivo(item.stato)),
     [preventivi]
   );
+  const daRicontattare = useMemo(
+    () =>
+      preventivi
+        .filter((item) => isDaRicontattare(item.data_invio, item.stato))
+        .sort((a, b) => a.data_invio.localeCompare(b.data_invio)),
+    [preventivi]
+  );
 
   const filtrati = useMemo(() => {
     if (filtro === "attivi") return attivi;
     if (filtro === "non_attivi") return nonAttivi;
-    return preventivi;
-  }, [filtro, preventivi, attivi, nonAttivi]);
+    if (filtro === "da_ricontattare") return daRicontattare;
+    return [...preventivi].sort((a, b) => {
+      const aDue = isDaRicontattare(a.data_invio, a.stato);
+      const bDue = isDaRicontattare(b.data_invio, b.stato);
+      if (aDue !== bDue) return aDue ? -1 : 1;
+      return 0;
+    });
+  }, [filtro, preventivi, attivi, nonAttivi, daRicontattare]);
 
   const totaleTutti = useMemo(() => sumPrezzi(preventivi), [preventivi]);
   const totaleAttivi = useMemo(() => sumPrezzi(attivi), [attivi]);
@@ -341,8 +360,30 @@ export function PreventiviLista({
         </div>
       </div>
 
+      {daRicontattare.length > 0 && (
+        <button
+          type="button"
+          onClick={() => setFiltro("da_ricontattare")}
+          className="flex w-full items-start gap-3 rounded-brand-lg border border-amber-400/35 bg-amber-500/10 px-4 py-3.5 text-left shadow-brand-md"
+        >
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-500/20 text-amber-200 ring-1 ring-inset ring-amber-400/35">
+            <Phone className="h-4 w-4" />
+          </span>
+          <span className="min-w-0">
+            <span className="block text-sm font-bold text-amber-100">
+              {daRicontattare.length === 1
+                ? "1 cliente da ricontattare"
+                : `${daRicontattare.length} clienti da ricontattare`}
+            </span>
+            <span className="mt-0.5 block text-xs text-amber-100/80">
+              È passata una settimana dal preventivo. Tocca per vederli.
+            </span>
+          </span>
+        </button>
+      )}
+
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="grid grid-cols-3 gap-1 rounded-xl border border-brand-border-strong bg-brand-surface p-1 sm:inline-flex sm:w-auto">
+        <div className="grid grid-cols-2 gap-1 rounded-xl border border-brand-border-strong bg-brand-surface p-1 sm:inline-flex sm:w-auto">
           {FILTRI.map((item) => (
             <button
               key={item.id}
@@ -383,9 +424,13 @@ export function PreventiviLista({
               const cliente = getCliente(preventivo);
               const nomeCompleto = `${cliente.nome} ${cliente.cognome}`.trim() || "—";
               const avatarClasses = getAvatarClasses(cliente.id);
+              const urgente = isDaRicontattare(preventivo.data_invio, preventivo.stato);
 
               return (
-                <li key={preventivo.id} className="px-4 py-4">
+                <li
+                  key={preventivo.id}
+                  className={`px-4 py-4 ${urgente ? "bg-amber-500/10" : ""}`}
+                >
                   <div className="flex items-start gap-3">
                     <span
                       className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-bold ring-1 ring-inset ${avatarClasses}`}
@@ -404,6 +449,10 @@ export function PreventiviLista({
                           <p className="text-sm font-semibold text-brand-text">{nomeCompleto}</p>
                         )}
                         <OrigineBadge daRichiesta={preventivo.daRichiesta} />
+                        <RichiamoPreventivoBadge
+                          dataInvio={preventivo.data_invio}
+                          stato={preventivo.stato}
+                        />
                       </div>
                       {cliente.azienda && (
                         <p className="mt-0.5 flex items-center gap-1 text-xs text-brand-muted">
@@ -514,13 +563,26 @@ export function PreventiviLista({
                     </span>
                     <span className="flex flex-col gap-1">
                       <span className="text-sm font-medium text-brand-soft">{nomeCompleto}</span>
-                      <OrigineBadge daRichiesta={preventivo.daRichiesta} />
+                      <span className="flex flex-wrap items-center gap-1">
+                        <OrigineBadge daRichiesta={preventivo.daRichiesta} />
+                        <RichiamoPreventivoBadge
+                          dataInvio={preventivo.data_invio}
+                          stato={preventivo.stato}
+                        />
+                      </span>
                     </span>
                   </div>
                 );
 
+                const urgente = isDaRicontattare(preventivo.data_invio, preventivo.stato);
+
                 return (
-                  <tr key={preventivo.id} className="group transition-colors hover:bg-brand-accent/5">
+                  <tr
+                    key={preventivo.id}
+                    className={`group transition-colors ${
+                      urgente ? "bg-amber-500/10 hover:bg-amber-500/15" : "hover:bg-brand-accent/5"
+                    }`}
+                  >
                     <td className="whitespace-nowrap px-4 py-3.5">
                       {cliente.href ? (
                         <Link href={cliente.href} className="block">

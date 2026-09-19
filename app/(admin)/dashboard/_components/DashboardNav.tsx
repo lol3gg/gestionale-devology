@@ -36,7 +36,7 @@ const NAV_ITEMS = [
     label: "Preventivi",
     shortLabel: "Preventivi",
     icon: FileText,
-    badgeKey: null,
+    badgeKey: "richiami" as const,
     isActive: (pathname: string) => pathname.startsWith("/dashboard/preventivi"),
   },
   {
@@ -68,6 +68,7 @@ const NAV_ITEMS = [
 type DashboardNavProps = {
   nuoveCount: number;
   archivioCount?: number;
+  richiamiCount?: number;
   variant?: "sidebar" | "mobile" | "bottom";
   collapsed?: boolean;
 };
@@ -75,6 +76,7 @@ type DashboardNavProps = {
 export function DashboardNav({
   nuoveCount,
   archivioCount = 0,
+  richiamiCount = 0,
   variant = "sidebar",
   collapsed = false,
 }: DashboardNavProps) {
@@ -99,7 +101,13 @@ export function DashboardNav({
         const isActive = item.isActive(pathname);
         const Icon = item.icon;
         const badgeCount =
-          item.badgeKey === "nuove" ? nuoveCount : item.badgeKey === "archivio" ? archivioCount : 0;
+          item.badgeKey === "nuove"
+            ? nuoveCount
+            : item.badgeKey === "archivio"
+              ? archivioCount
+              : item.badgeKey === "richiami"
+                ? richiamiCount
+                : 0;
         const showBadge = !!item.badgeKey && badgeCount > 0;
 
         if (isBottom) {
@@ -121,7 +129,9 @@ export function DashboardNav({
                     className={`absolute -right-2 -top-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[9px] font-bold leading-none ${
                       item.badgeKey === "nuove"
                         ? "bg-brand-accent text-white"
-                        : "bg-brand-soft text-brand-bg"
+                        : item.badgeKey === "richiami"
+                          ? "bg-amber-400 text-brand-bg"
+                          : "bg-brand-soft text-brand-bg"
                     }`}
                   >
                     {badgeCount > 99 ? "99+" : badgeCount}
@@ -163,7 +173,9 @@ export function DashboardNav({
                 className={`inline-flex min-w-[1.375rem] items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-bold ${
                   item.badgeKey === "nuove"
                     ? "bg-brand-accent text-white"
-                    : "bg-white/10 text-brand-soft ring-1 ring-inset ring-white/15"
+                    : item.badgeKey === "richiami"
+                      ? "bg-amber-400/20 text-amber-200 ring-1 ring-inset ring-amber-400/35"
+                      : "bg-white/10 text-brand-soft ring-1 ring-inset ring-white/15"
                 }`}
               >
                 {badgeCount}
@@ -172,7 +184,11 @@ export function DashboardNav({
             {showBadge && isIconOnly && (
               <span
                 className={`absolute right-1.5 top-1.5 h-2 w-2 rounded-full ${
-                  item.badgeKey === "nuove" ? "bg-brand-accent" : "bg-brand-soft"
+                  item.badgeKey === "nuove"
+                    ? "bg-brand-accent"
+                    : item.badgeKey === "richiami"
+                      ? "bg-amber-400"
+                      : "bg-brand-soft"
                 }`}
               />
             )}

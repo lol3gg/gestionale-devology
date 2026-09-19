@@ -1,17 +1,18 @@
 "use client";
 
 import { useState, useTransition, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { Loader2, Trash2, X } from "lucide-react";
 import {
   CALL_DURATA_DEFAULT,
   CALL_DURATE,
-  SLOT_ORE,
   durataCall,
   formatGiornoCompleto,
   normalizzaOra,
   oraFineCall,
 } from "@/lib/calendario/date";
 import type { CallAppuntamento, CallAppuntamentoInput } from "@/lib/calendario/types";
+import type { CallActionResult } from "@/lib/calendario/store";
 import { createCall, deleteCall, updateCall } from "../actions";
 
 const INPUT =
@@ -32,6 +33,7 @@ export type CallFormDraft = {
 type CallFormModalProps = {
   draft: CallFormDraft;
   onClose: () => void;
+  onSaved: (result: CallActionResult & { ok: true }) => void;
 };
 
 export function callToDraft(call: CallAppuntamento): CallFormDraft {
@@ -47,7 +49,8 @@ export function callToDraft(call: CallAppuntamento): CallFormDraft {
   };
 }
 
-export function CallFormModal({ draft, onClose }: CallFormModalProps) {
+export function CallFormModal({ draft, onClose, onSaved }: CallFormModalProps) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [giorno, setGiorno] = useState(draft.giorno);
@@ -85,7 +88,21 @@ export function CallFormModal({ draft, onClose }: CallFormModalProps) {
           setErrorMessage(result.error);
           return;
         }
+        onSaved(
+          result.call || result.deletedId
+            ? result
+            : {
+                ok: true,
+                call: {
+                  id: draft.id ?? crypto.randomUUID(),
+                  ...payload(),
+                  ora: normalizzaOra(payload().ora),
+                  durataMinuti: durataCall(payload().durataMinuti),
+                },
+              }
+        );
         onClose();
+        router.refresh();
       } catch {
         setErrorMessage("Errore nel salvataggio.");
       }
@@ -103,7 +120,9 @@ export function CallFormModal({ draft, onClose }: CallFormModalProps) {
           setErrorMessage(result.error);
           return;
         }
+        onSaved(result);
         onClose();
+        router.refresh();
       } catch {
         setErrorMessage("Errore nell'eliminazione.");
       }
@@ -161,13 +180,13 @@ export function CallFormModal({ draft, onClose }: CallFormModalProps) {
           </label>
           <label className="block">
             <span className={LABEL}>Inizio</span>
-            <select value={ora} onChange={(event) => setOra(event.target.value)} className={INPUT}>
-              {SLOT_ORE.map((slot) => (
-                <option key={slot} value={slot}>
-                  {slot}
-                </option>
-              ))}
-            </select>
+            <input
+              type="time"
+              required
+              value={ora}
+              onChange={(event) => setOra(event.target.value)}
+              className={INPUT}
+            />
           </label>
         </div>
 
@@ -185,8 +204,8 @@ export function CallFormModal({ draft, onClose }: CallFormModalProps) {
             ))}
           </select>
           <span className="mt-1 block text-xs text-brand-muted">
-            Di default occupa 30 minuti e chiude gli slot dopo. Puoi accorciare o allungare. Termina alle{" "}
-            <span className="font-semibold text-brand-text">{oraFine}</span>.
+            Termina alle <span className="font-semibold text-brand-text">{oraFine}</span>. Se si
+            sovrappone a un&apos;altra call, il salvataggio viene bloccato.
           </span>
         </label>
 

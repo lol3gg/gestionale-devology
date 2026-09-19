@@ -8,15 +8,27 @@ import { ThemeToggle } from "./_components/ThemeToggle";
 import { LinkClienteButton } from "./_components/LinkClienteButton";
 import { LockDashboardScroll } from "./_components/LockDashboardScroll";
 import { LogoutButton } from "./_components/LogoutButton";
+import { RegisterServiceWorker } from "./_components/RegisterServiceWorker";
+import { addGiorni, oggiIsoRoma } from "@/lib/calendario/date";
+import { GIORNI_RICHIAMO_PREVENTIVO } from "@/lib/preventivi/richiamo";
+import { STATI_PREVENTIVO_ATTIVI } from "@/lib/preventivi/stato";
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
   const supabase = createClient();
 
-  const [{ data: userData }, { count: nuoveCount }, { count: archivioCount }] = await Promise.all([
-    supabase.auth.getUser(),
-    supabase.from("richieste").select("id", { count: "exact", head: true }).eq("stato", "nuovo"),
-    supabase.from("richieste").select("id", { count: "exact", head: true }).eq("stato", "archiviato"),
-  ]);
+  const limiteRichiamo = addGiorni(oggiIsoRoma(), -GIORNI_RICHIAMO_PREVENTIVO);
+  const [{ data: userData }, { count: nuoveCount }, { count: archivioCount }, richiamiResult] =
+    await Promise.all([
+      supabase.auth.getUser(),
+      supabase.from("richieste").select("id", { count: "exact", head: true }).eq("stato", "nuovo"),
+      supabase.from("richieste").select("id", { count: "exact", head: true }).eq("stato", "archiviato"),
+      supabase
+        .from("preventivi")
+        .select("id", { count: "exact", head: true })
+        .in("stato", STATI_PREVENTIVO_ATTIVI)
+        .lte("data_invio", limiteRichiamo),
+    ]);
+  const richiamiCount = richiamiResult.error ? 0 : richiamiResult.count ?? 0;
 
   const email = userData.user?.email ?? "Admin";
   const initials = email.slice(0, 2).toUpperCase();
@@ -24,11 +36,13 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   return (
     <div className="fixed inset-0 flex overflow-hidden bg-brand-bg bg-brand-grid bg-[length:40px_40px]">
       <LockDashboardScroll />
+      <RegisterServiceWorker />
       <DashboardSidebar
         email={email}
         initials={initials}
         nuoveCount={nuoveCount ?? 0}
         archivioCount={archivioCount ?? 0}
+        richiamiCount={richiamiCount}
       />
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
@@ -66,6 +80,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
           <DashboardNav
             nuoveCount={nuoveCount ?? 0}
             archivioCount={archivioCount ?? 0}
+            richiamiCount={richiamiCount}
             variant="bottom"
           />
         </div>

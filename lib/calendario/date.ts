@@ -74,7 +74,17 @@ export function normalizzaOra(value: string | null | undefined): string {
   if (!value) return "00:00";
   const match = String(value).match(/(\d{1,2}):(\d{2})/);
   if (!match) return "00:00";
-  return `${match[1].padStart(2, "0")}:${match[2]}`;
+  const ore = Math.min(23, Math.max(0, Number(match[1])));
+  const minuti = Math.min(59, Math.max(0, Number(match[2])));
+  return `${String(ore).padStart(2, "0")}:${String(minuti).padStart(2, "0")}`;
+}
+
+export function isOraValida(value: string | null | undefined): boolean {
+  return /^\d{2}:\d{2}$/.test(normalizzaOra(value)) && String(value ?? "").trim().length > 0;
+}
+
+export function oraCorrenteRoma(): string {
+  return minutiToOra(minutiCorrentiRoma());
 }
 
 export function generaSlot(): string[] {

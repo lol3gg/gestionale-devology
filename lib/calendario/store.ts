@@ -10,7 +10,9 @@ import type { CallAppuntamento, CallAppuntamentoInput } from "@/lib/calendario/t
 const STORAGE_BUCKET = "preventivi-clienti";
 const STORAGE_PATH = "calendario/appuntamenti.json";
 
-export type CallActionResult = { ok: true } | { ok: false; error: string };
+export type CallActionResult =
+  | { ok: true; call?: CallAppuntamento; deletedId?: string }
+  | { ok: false; error: string };
 
 function isMissingTable(error: { code?: string; message?: string } | null | undefined) {
   if (!error) return false;
@@ -146,17 +148,21 @@ export async function insertCall(
   input: CallAppuntamentoInput
 ): Promise<CallActionResult> {
   const row = toRow(input);
-  const { error } = await supabase.from("call_appuntamenti").insert({
-    giorno: row.giorno,
-    ora: row.ora,
-    durata_minuti: row.durataMinuti,
-    azienda: row.azienda,
-    email: row.email,
-    telefono: row.telefono,
-    attivita: row.attivita,
-  });
-  if (!error) return { ok: true };
-  if (!isMissingTable(error)) {
+  const { data, error } = await supabase
+    .from("call_appuntamenti")
+    .insert({
+      giorno: row.giorno,
+      ora: row.ora,
+      durata_minuti: row.durataMinuti,
+      azienda: row.azienda,
+      email: row.email,
+      telefono: row.telefono,
+      attivita: row.attivita,
+    })
+    .select("id, giorno, ora, durata_minuti, azienda, email, telefono, attivita")
+    .single();
+  if (!error && data) return { ok: true, call: mapRow(data) };
+  if (error && !isMissingTable(error)) {
     if (error.code === "23505") return { ok: false, error: "Questo orario è già occupato da un'altra call." };
     return { ok: false, error: `Impossibile fissare la call: ${error.message}` };
   }
@@ -166,12 +172,13 @@ export async function insertCall(
     if (siSovrappone(calls, row.giorno, row.ora, row.durataMinuti)) {
       return { ok: false, error: "Questo orario è già occupato da un'altra call." };
     }
-    calls.push({
+    const call: CallAppuntamento = {
       id: crypto.randomUUID(),
       ...row,
-    });
+    };
+    calls.push(call);
     await saveToStorage(supabase, calls);
-    return { ok: true };
+    return { ok: true, call };
   } catch (storageError) {
     return {
       ok: false,
@@ -199,7 +206,9 @@ export async function patchCall(
     })
     .eq("id", id)
     .select("id");
-  if (!error && data && data.length > 0) return { ok: true };
+  if (!error && data && data.length > 0) {
+    return { ok: true, call: { id, ...row } };
+  }
   if (error && !isMissingTable(error)) {
     if (error.code === "23505") return { ok: false, error: "Questo orario è già occupato da un'altra call." };
     return { ok: false, error: `Impossibile aggiornare la call: ${error.message}` };
@@ -212,9 +221,10 @@ export async function patchCall(
     if (siSovrappone(calls, row.giorno, row.ora, row.durataMinuti, id)) {
       return { ok: false, error: "Questo orario è già occupato da un'altra call." };
     }
-    calls[index] = { id, ...row };
+    const call: CallAppuntamento = { id, ...row };
+    calls[index] = call;
     await saveToStorage(supabase, calls);
-    return { ok: true };
+    return { ok: true, call };
   } catch (storageError) {
     return {
       ok: false,
@@ -225,7 +235,7 @@ export async function patchCall(
 
 export async function removeCall(supabase: SupabaseClient, id: string): Promise<CallActionResult> {
   const { data, error } = await supabase.from("call_appuntamenti").delete().eq("id", id).select("id");
-  if (!error && data && data.length > 0) return { ok: true };
+  if (!error && data && data.length > 0) return { ok: true, deletedId: id };
   if (error && !isMissingTable(error)) {
     return { ok: false, error: `Impossibile eliminare la call: ${error.message}` };
   }
@@ -236,7 +246,7 @@ export async function removeCall(supabase: SupabaseClient, id: string): Promise<
       supabase,
       calls.filter((call) => call.id !== id)
     );
-    return { ok: true };
+    return { ok: true, deletedId: id };
   } catch (storageError) {
     return {
       ok: false,

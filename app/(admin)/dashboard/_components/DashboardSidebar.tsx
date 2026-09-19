@@ -14,6 +14,7 @@ type DashboardSidebarProps = {
   initials: string;
   nuoveCount: number;
   archivioCount: number;
+  richiamiCount: number;
 };
 
 export function DashboardSidebar({
@@ -21,6 +22,7 @@ export function DashboardSidebar({
   initials,
   nuoveCount,
   archivioCount,
+  richiamiCount,
 }: DashboardSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [hydrated, setHydrated] = useState(false);
@@ -98,6 +100,7 @@ export function DashboardSidebar({
       <DashboardNav
         nuoveCount={nuoveCount}
         archivioCount={archivioCount}
+        richiamiCount={richiamiCount}
         collapsed={collapsed}
       />
 
