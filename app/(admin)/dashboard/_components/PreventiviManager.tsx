@@ -38,10 +38,19 @@ function formatDataInvio(value: string) {
 
 type PreventiviManagerProps = {
   richiestaId: string;
+  clienteNome?: string | null;
+  clienteCognome?: string | null;
+  clienteAzienda?: string | null;
   preventiviIniziali: PreventivoItem[];
 };
 
-export function PreventiviManager({ richiestaId, preventiviIniziali }: PreventiviManagerProps) {
+export function PreventiviManager({
+  richiestaId,
+  clienteNome,
+  clienteCognome,
+  clienteAzienda,
+  preventiviIniziali,
+}: PreventiviManagerProps) {
   const [preventivi, setPreventivi] = useState(preventiviIniziali);
   const [numero, setNumero] = useState("");
   const [dataInvio, setDataInvio] = useState(todayIsoDate());
@@ -161,6 +170,9 @@ export function PreventiviManager({ richiestaId, preventiviIniziali }: Preventiv
       .from("preventivi")
       .insert({
         richiesta_id: richiestaId,
+        nome: clienteNome?.trim() || null,
+        cognome: clienteCognome?.trim() || null,
+        azienda: clienteAzienda?.trim() || null,
         numero_preventivo: numero.trim(),
         data_invio: dataInvio,
         prezzo: prezzoNumber,
@@ -386,14 +398,14 @@ export function PreventiviManager({ richiestaId, preventiviIniziali }: Preventiv
         <button
           type="submit"
           disabled={isUploading}
-          className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-b from-[#e01431] via-brand-accent to-[#b00f26] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-b from-[#e01431] via-brand-accent to-[#b00f26] px-5 py-3.5 text-base font-semibold text-white shadow-brand-md transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto sm:px-6 sm:py-2.5 sm:text-sm"
         >
           {isUploading ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
-            <UploadCloud className="h-3.5 w-3.5" />
+            <UploadCloud className="h-4 w-4" />
           )}
-          {isUploading ? "Caricamento..." : "Carica preventivo"}
+          {isUploading ? "Salvataggio..." : "Salva preventivo"}
         </button>
       </form>
     </section>

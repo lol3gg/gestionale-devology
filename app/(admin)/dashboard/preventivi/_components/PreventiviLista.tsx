@@ -53,6 +53,7 @@ export type PreventivoListaItem = {
   collaboratoreId: string | null;
   percentualeCollaboratore: number | null;
   collaboratoreNome: string | null;
+  daRichiesta: boolean;
   richiesta: { id: string; nome: string; cognome: string } | null;
 };
 
@@ -60,6 +61,20 @@ function formatDataInvio(value: string) {
   const [anno, mese, giorno] = value.split("-").map(Number);
   const date = anno && mese && giorno ? new Date(anno, mese - 1, giorno) : new Date(value);
   return date.toLocaleDateString("it-IT", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function OrigineBadge({ daRichiesta }: { daRichiesta: boolean }) {
+  return (
+    <span
+      className={`inline-flex rounded-full px-1.5 py-0.5 text-[10px] font-semibold ring-1 ring-inset ${
+        daRichiesta
+          ? "bg-blue-500/15 text-blue-300 ring-blue-500/30"
+          : "bg-brand-surface text-brand-muted ring-brand-border"
+      }`}
+    >
+      {daRichiesta ? "Richiesta" : "Sezione"}
+    </span>
+  );
 }
 
 function getCliente(preventivo: PreventivoListaItem) {
@@ -299,7 +314,7 @@ export function PreventiviLista({
             {formatEuro(totaleTutti)}
           </p>
           <p className="mt-1 text-[11px] font-medium leading-snug text-brand-muted sm:text-xs">
-            Totale preventivato · {preventivi.length}
+            Totale · {preventivi.length} (richieste + sezione)
           </p>
         </div>
         <div className="rounded-brand-lg border border-brand-border bg-brand-elevated p-3.5 shadow-brand-md sm:p-5">
@@ -347,7 +362,7 @@ export function PreventiviLista({
           Totale vista:{" "}
           <span className="text-brand-text">{formatEuro(totaleFiltrato)}</span>
           <span className="ml-1 text-xs font-medium text-brand-muted">
-            ({filtrati.length})
+            ({filtrati.length} · richieste e sezione)
           </span>
         </p>
       </div>
@@ -380,13 +395,16 @@ export function PreventiviLista({
                         : "?"}
                     </span>
                     <div className="min-w-0 flex-1">
-                      {cliente.href ? (
-                        <Link href={cliente.href} className="text-sm font-semibold text-brand-text">
-                          {nomeCompleto}
-                        </Link>
-                      ) : (
-                        <p className="text-sm font-semibold text-brand-text">{nomeCompleto}</p>
-                      )}
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {cliente.href ? (
+                          <Link href={cliente.href} className="text-sm font-semibold text-brand-text">
+                            {nomeCompleto}
+                          </Link>
+                        ) : (
+                          <p className="text-sm font-semibold text-brand-text">{nomeCompleto}</p>
+                        )}
+                        <OrigineBadge daRichiesta={preventivo.daRichiesta} />
+                      </div>
                       {cliente.azienda && (
                         <p className="mt-0.5 flex items-center gap-1 text-xs text-brand-muted">
                           <Building2 className="h-3 w-3" />
@@ -494,7 +512,10 @@ export function PreventiviLista({
                         ? getInitials(cliente.nome, cliente.cognome)
                         : "?"}
                     </span>
-                    <span className="text-sm font-medium text-brand-soft">{nomeCompleto}</span>
+                    <span className="flex flex-col gap-1">
+                      <span className="text-sm font-medium text-brand-soft">{nomeCompleto}</span>
+                      <OrigineBadge daRichiesta={preventivo.daRichiesta} />
+                    </span>
                   </div>
                 );
 

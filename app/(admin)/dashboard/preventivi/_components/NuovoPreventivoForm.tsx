@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import { useMemo, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Plus, UploadCloud, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
@@ -8,6 +8,7 @@ import { assegnaCollaboratoreAPreventivo } from "@/app/(admin)/dashboard/collabo
 import type { CollaboratoreOption } from "@/lib/collaboratori/types";
 import { importoDovuto } from "@/lib/collaboratori/calcoli";
 import { formatEuro } from "@/lib/contabilita/format";
+import { getStatoLabel } from "@/lib/richieste/stato";
 import {
   STATO_PREVENTIVO_DEFAULT,
   STATO_PREVENTIVO_OPTIONS,
@@ -34,11 +35,34 @@ function buildNumeroPreventivo(dataInvio: string) {
 const INPUT =
   "w-full rounded-lg border border-brand-border-strong bg-brand-surface px-3 py-3 text-base text-brand-text placeholder:text-brand-muted shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-accent sm:py-2 sm:text-sm";
 
-export function NuovoPreventivoForm({ collaboratori }: { collaboratori: CollaboratoreOption[] }) {
+export type RichiestaPreventivoOption = {
+  id: string;
+  nome: string;
+  cognome: string;
+  nome_azienda: string | null;
+  stato: string;
+};
+
+function labelRichiesta(richiesta: RichiestaPreventivoOption) {
+  const nome = `${richiesta.nome} ${richiesta.cognome}`.trim() || "Senza nome";
+  const azienda = richiesta.nome_azienda?.trim();
+  const stato = getStatoLabel(richiesta.stato);
+  return azienda ? `${nome} · ${azienda} · ${stato}` : `${nome} · ${stato}`;
+}
+
+export function NuovoPreventivoForm({
+  collaboratori,
+  richieste,
+}: {
+  collaboratori: CollaboratoreOption[];
+  richieste: RichiestaPreventivoOption[];
+}) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [isOpen, setIsOpen] = useState(false);
+  const [richiestaId, setRichiestaId] = useState("");
+  const [ricercaRichiesta, setRicercaRichiesta] = useState("");
   const [nome, setNome] = useState("");
   const [cognome, setCognome] = useState("");
   const [azienda, setAzienda] = useState("");
@@ -50,6 +74,25 @@ export function NuovoPreventivoForm({ collaboratori }: { collaboratori: Collabor
   const [isUploading, setIsUploading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  const richiesteFiltrate = useMemo(() => {
+    const query = ricercaRichiesta.trim().toLowerCase();
+    if (!query) return richieste;
+    return richieste.filter((richiesta) => {
+      const haystack = `${richiesta.nome} ${richiesta.cognome} ${richiesta.nome_azienda ?? ""} ${getStatoLabel(richiesta.stato)}`.toLowerCase();
+      return haystack.includes(query) || richiesta.id === richiestaId;
+    });
+  }, [richieste, ricercaRichiesta, richiestaId]);
+
+  function applyRichiesta(id: string) {
+    setRichiestaId(id);
+    if (!id) return;
+    const richiesta = richieste.find((item) => item.id === id);
+    if (!richiesta) return;
+    setNome(richiesta.nome ?? "");
+    setCognome(richiesta.cognome ?? "");
+    setAzienda(richiesta.nome_azienda ?? "");
+  }
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const selected = event.target.files?.[0] ?? null;
@@ -80,6 +123,8 @@ export function NuovoPreventivoForm({ collaboratori }: { collaboratori: Collabor
   }
 
   function resetForm() {
+    setRichiestaId("");
+    setRicercaRichiesta("");
     setNome("");
     setCognome("");
     setAzienda("");
@@ -96,12 +141,17 @@ export function NuovoPreventivoForm({ collaboratori }: { collaboratori: Collabor
     setErrorMessage(null);
     setSuccessMessage(null);
 
-    if (!nome.trim()) {
-      setErrorMessage("Inserisci il nome.");
+    const richiestaSelezionata = richieste.find((item) => item.id === richiestaId) ?? null;
+    const nomeFinale = nome.trim() || richiestaSelezionata?.nome?.trim() || "";
+    const cognomeFinale = cognome.trim() || richiestaSelezionata?.cognome?.trim() || "";
+    const aziendaFinale = azienda.trim() || richiestaSelezionata?.nome_azienda?.trim() || "";
+
+    if (!richiestaId && !nomeFinale) {
+      setErrorMessage("Assegna una richiesta oppure inserisci il nome.");
       return;
     }
-    if (!cognome.trim()) {
-      setErrorMessage("Inserisci il cognome.");
+    if (!richiestaId && !cognomeFinale) {
+      setErrorMessage("Assegna una richiesta oppure inserisci il cognome.");
       return;
     }
     if (!dataInvio) {
@@ -122,7 +172,7 @@ export function NuovoPreventivoForm({ collaboratori }: { collaboratori: Collabor
 
     setIsUploading(true);
     const supabase = createClient();
-    const storagePath = `standalone/${crypto.randomUUID()}-${file.name}`;
+    const storagePath = `${richiestaId || "standalone"}/${crypto.randomUUID()}-${file.name}`;
 
     const { error: uploadError } = await supabase.storage.from(BUCKET).upload(storagePath, file, {
       contentType: "application/pdf",
@@ -142,16 +192,16 @@ export function NuovoPreventivoForm({ collaboratori }: { collaboratori: Collabor
     const { data: inserted, error: insertError } = await supabase
       .from("preventivi")
       .insert({
-      richiesta_id: null,
-      nome: nome.trim(),
-      cognome: cognome.trim(),
-      azienda: azienda.trim() || null,
-      data_invio: dataInvio,
-      prezzo: prezzoNumber,
-      stato,
-      numero_preventivo: buildNumeroPreventivo(dataInvio),
-      nome_file: file.name,
-      url_file: urlFile,
+        richiesta_id: richiestaId || null,
+        nome: nomeFinale || null,
+        cognome: cognomeFinale || null,
+        azienda: aziendaFinale || null,
+        data_invio: dataInvio,
+        prezzo: prezzoNumber,
+        stato,
+        numero_preventivo: buildNumeroPreventivo(dataInvio),
+        nome_file: file.name,
+        url_file: urlFile,
       })
       .select("id")
       .single();
@@ -168,7 +218,7 @@ export function NuovoPreventivoForm({ collaboratori }: { collaboratori: Collabor
         await assegnaCollaboratoreAPreventivo({
           preventivo_id: inserted.id,
           collaboratore_id: collaboratoreId,
-          cliente: `${nome.trim()} ${cognome.trim()}`.trim(),
+          cliente: `${nomeFinale} ${cognomeFinale}`.trim() || aziendaFinale || "Cliente",
           prezzo: prezzoNumber,
           data: dataInvio,
         });
@@ -212,7 +262,7 @@ export function NuovoPreventivoForm({ collaboratori }: { collaboratori: Collabor
         <div>
           <h2 className="text-base font-semibold text-brand-text">Nuovo preventivo</h2>
           <p className="mt-1 text-sm text-brand-muted">
-            Crea un preventivo con prezzo, stato e PDF. L&apos;azienda è opzionale.
+            Assegnalo a una richiesta esistente oppure crea un preventivo standalone.
           </p>
         </div>
         <button
@@ -242,10 +292,43 @@ export function NuovoPreventivoForm({ collaboratori }: { collaboratori: Collabor
           </div>
         )}
 
+        <div>
+          <label htmlFor="prev_richiesta_cerca" className="mb-1 block text-xs font-medium text-brand-soft">
+            Assegna a una richiesta
+          </label>
+          <input
+            id="prev_richiesta_cerca"
+            type="search"
+            value={ricercaRichiesta}
+            onChange={(event) => setRicercaRichiesta(event.target.value)}
+            placeholder="Cerca per nome, azienda o stato..."
+            className={`${INPUT} mb-2`}
+          />
+          <select
+            id="prev_richiesta"
+            value={richiestaId}
+            onChange={(event) => applyRichiesta(event.target.value)}
+            className={INPUT}
+          >
+            <option value="">Nessuna richiesta (standalone)</option>
+            {richiesteFiltrate.map((richiesta) => (
+              <option key={richiesta.id} value={richiesta.id}>
+                {labelRichiesta(richiesta)}
+              </option>
+            ))}
+          </select>
+          {richieste.length === 0 && (
+            <p className="mt-1.5 text-xs text-brand-muted">Non ci sono richieste da collegare.</p>
+          )}
+          {richieste.length > 0 && richiesteFiltrate.length === 0 && (
+            <p className="mt-1.5 text-xs text-brand-muted">Nessuna richiesta corrisponde alla ricerca.</p>
+          )}
+        </div>
+
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <label htmlFor="prev_nome" className="mb-1 block text-xs font-medium text-brand-soft">
-              Nome <span className="text-brand-accent-light">*</span>
+              Nome {richiestaId ? "" : <span className="text-brand-accent-light">*</span>}
             </label>
             <input
               id="prev_nome"
@@ -257,7 +340,7 @@ export function NuovoPreventivoForm({ collaboratori }: { collaboratori: Collabor
           </div>
           <div>
             <label htmlFor="prev_cognome" className="mb-1 block text-xs font-medium text-brand-soft">
-              Cognome <span className="text-brand-accent-light">*</span>
+              Cognome {richiestaId ? "" : <span className="text-brand-accent-light">*</span>}
             </label>
             <input
               id="prev_cognome"

@@ -130,6 +130,14 @@ export default async function RichiestaDetailPage({ params }: RichiestaDetailPag
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
+          <PreventiviManager
+            richiestaId={richiesta.id}
+            clienteNome={richiesta.nome}
+            clienteCognome={richiesta.cognome}
+            clienteAzienda={richiesta.nome_azienda}
+            preventiviIniziali={preventivi}
+          />
+
           <ModificaRichiestaForm
             richiesta={{
               id: richiesta.id,
@@ -193,8 +201,6 @@ export default async function RichiestaDetailPage({ params }: RichiestaDetailPag
               </ul>
             )}
           </section>
-
-          <PreventiviManager richiestaId={richiesta.id} preventiviIniziali={preventivi} />
         </div>
 
         <div className="space-y-6">

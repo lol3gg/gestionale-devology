@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Check, Link2 } from "lucide-react";
 import { getPublicOrigin } from "@/lib/site";
+import { pathPortaleCollaboratore } from "@/lib/collaboratori/token";
 
 export function CopiaLinkPortaleButton({
   token,
@@ -21,10 +22,10 @@ export function CopiaLinkPortaleButton({
     );
   }
 
-  const linkToken = token;
+  const path = pathPortaleCollaboratore(nome, token);
+  const link = `${getPublicOrigin()}${path}`;
 
   async function copiaLink() {
-    const link = `${getPublicOrigin()}/collab/${linkToken}`;
     try {
       await navigator.clipboard.writeText(link);
     } catch {
@@ -47,7 +48,7 @@ export function CopiaLinkPortaleButton({
         type="button"
         onClick={copiaLink}
         title={`Copia il link portale da mandare a ${nome}`}
-        data-portale-path={`/collab/${linkToken}`}
+        data-portale-path={path}
         className={`inline-flex w-full items-center justify-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-semibold transition sm:w-auto ${
           copiato
             ? "bg-emerald-600 text-white"
@@ -57,9 +58,7 @@ export function CopiaLinkPortaleButton({
         {copiato ? <Check className="h-3.5 w-3.5" /> : <Link2 className="h-3.5 w-3.5" />}
         {copiato ? "Link copiato! Mandalo dal telefono" : "Copia link portale"}
       </button>
-      <p className="break-all text-[10px] leading-snug text-brand-muted">
-        Si apre sul telefono, senza login, con il nome di {nome}.
-      </p>
+      <p className="break-all text-[10px] leading-snug text-brand-muted">{link}</p>
     </div>
   );
 }

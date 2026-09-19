@@ -10,6 +10,7 @@ import {
 import { STATO_OPTIONS, type StatoRichiesta } from "@/lib/richieste/stato";
 import { DashboardOverview } from "./_components/DashboardOverview";
 import { EliminataToast } from "./_components/EliminataToast";
+import { ProssimeCallCollaboratori } from "./_components/ProssimeCallCollaboratori";
 import type { RichiestaListItem } from "./_components/RichiesteTable";
 
 export const dynamic = "force-dynamic";
@@ -118,6 +119,8 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           Errore nel caricamento delle richieste: {error.message}
         </div>
       )}
+
+      <ProssimeCallCollaboratori />
 
       <DashboardOverview
         richieste={(richieste ?? []) as RichiestaListItem[]}

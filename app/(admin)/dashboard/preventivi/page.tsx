@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { regenerateSignedUrl } from "@/lib/storage/signedUrl";
-import { NuovoPreventivoForm } from "./_components/NuovoPreventivoForm";
+import { NuovoPreventivoForm, type RichiestaPreventivoOption } from "./_components/NuovoPreventivoForm";
 import { PreventiviLista, type PreventivoListaItem } from "./_components/PreventiviLista";
 import type { CollaboratoreOption } from "@/lib/collaboratori/types";
 
@@ -11,19 +11,57 @@ const SIGNED_URL_EXPIRY_SECONDS = 60 * 60 * 4; // 4 ore
 
 type RichiestaRef = { id: string; nome: string; cognome: string } | null;
 
+type PreventivoRow = {
+  id: string;
+  richiesta_id: string | null;
+  numero_preventivo: string | null;
+  data_invio: string;
+  nome_file: string;
+  url_file: string;
+  nome: string | null;
+  cognome: string | null;
+  azienda: string | null;
+  prezzo: number | null;
+  stato: string | null;
+};
+
 export default async function PreventiviPage() {
   const supabase = createClient();
 
-  const [{ data: preventiviRows, error }, { data: collaboratoriRows }, { data: lavoriRows }] = await Promise.all([
-    supabase
+  const [preventiviResult, { data: collaboratoriRows }, { data: lavoriRows }, { data: richiesteRows }] =
+    await Promise.all([
+      supabase
+        .from("preventivi")
+        .select(
+          "id, richiesta_id, numero_preventivo, data_invio, nome_file, url_file, nome, cognome, azienda, prezzo, stato, created_at"
+        )
+        .order("data_invio", { ascending: false }),
+      supabase.from("collaboratori").select("id, nome, percentuale, attivo").eq("attivo", true).order("nome"),
+      supabase.from("collaboratore_lavori").select("id, preventivo_id, collaboratore_id, percentuale"),
+      supabase
+        .from("richieste")
+        .select("id, nome, cognome, nome_azienda, stato")
+        .order("created_at", { ascending: false }),
+    ]);
+
+  let preventiviRows = (preventiviResult.data ?? []) as PreventivoRow[];
+  let error = preventiviResult.error;
+
+  if (error) {
+    const fallback = await supabase
       .from("preventivi")
-      .select(
-        "id, numero_preventivo, data_invio, nome_file, url_file, nome, cognome, azienda, prezzo, stato, created_at, richieste(id, nome, cognome)"
-      )
-      .order("data_invio", { ascending: false }),
-    supabase.from("collaboratori").select("id, nome, percentuale, attivo").eq("attivo", true).order("nome"),
-    supabase.from("collaboratore_lavori").select("id, preventivo_id, collaboratore_id, percentuale"),
-  ]);
+      .select("id, richiesta_id, numero_preventivo, data_invio, nome_file, url_file, prezzo, stato, created_at")
+      .order("data_invio", { ascending: false });
+    if (!fallback.error) {
+      preventiviRows = (fallback.data ?? []).map((row) => ({
+        ...row,
+        nome: null,
+        cognome: null,
+        azienda: null,
+      })) as PreventivoRow[];
+      error = null;
+    }
+  }
 
   const collaboratori: CollaboratoreOption[] = (collaboratoriRows ?? []).map((row) => ({
     id: row.id,
@@ -38,11 +76,23 @@ export default async function PreventiviPage() {
       .map((row) => [row.preventivo_id as string, row])
   );
 
+  const richiestaById = new Map((richiesteRows ?? []).map((row) => [row.id, row]));
+
   const preventivi: PreventivoListaItem[] = await Promise.all(
-    (preventiviRows ?? []).map(async (preventivo) => {
+    preventiviRows.map(async (preventivo) => {
       const lavoro = lavoroPerPreventivo.get(preventivo.id);
       const collaboratore = lavoro
         ? collaboratori.find((item) => item.id === lavoro.collaboratore_id)
+        : null;
+      const richiestaCollegata = preventivo.richiesta_id
+        ? richiestaById.get(preventivo.richiesta_id) ?? null
+        : null;
+      const richiesta: RichiestaRef = preventivo.richiesta_id
+        ? {
+            id: preventivo.richiesta_id,
+            nome: richiestaCollegata?.nome || preventivo.nome || "",
+            cognome: richiestaCollegata?.cognome || preventivo.cognome || "",
+          }
         : null;
 
       return {
@@ -51,17 +101,16 @@ export default async function PreventiviPage() {
         data_invio: preventivo.data_invio,
         nome_file: preventivo.nome_file,
         url_file: preventivo.url_file,
-        nome: preventivo.nome,
-        cognome: preventivo.cognome,
-        azienda: preventivo.azienda,
+        nome: preventivo.nome || richiestaCollegata?.nome || null,
+        cognome: preventivo.cognome || richiestaCollegata?.cognome || null,
+        azienda: preventivo.azienda || richiestaCollegata?.nome_azienda || null,
         prezzo: preventivo.prezzo != null ? Number(preventivo.prezzo) : null,
         stato: preventivo.stato ?? "inviato",
         collaboratoreId: lavoro?.collaboratore_id ?? null,
         percentualeCollaboratore: lavoro ? Number(lavoro.percentuale) : null,
         collaboratoreNome: collaboratore?.nome ?? null,
-        richiesta: (Array.isArray(preventivo.richieste)
-          ? preventivo.richieste[0]
-          : preventivo.richieste) as RichiestaRef,
+        daRichiesta: Boolean(preventivo.richiesta_id),
+        richiesta,
         downloadUrl: await regenerateSignedUrl(
           supabase,
           PREVENTIVI_BUCKET,
@@ -92,7 +141,10 @@ export default async function PreventiviPage() {
         </div>
       )}
 
-      <NuovoPreventivoForm collaboratori={collaboratori} />
+      <NuovoPreventivoForm
+        collaboratori={collaboratori}
+        richieste={(richiesteRows ?? []) as RichiestaPreventivoOption[]}
+      />
       <PreventiviLista preventiviIniziali={preventivi} collaboratori={collaboratori} />
     </div>
   );

@@ -73,8 +73,19 @@ export function isTokenCollaboratore(value: string | undefined | null): value is
   return /^[A-Za-z0-9_.-]{24,400}$/.test(value);
 }
 
-export function pathPortaleCollaboratore(token: string) {
-  return `/collab/${token}`;
+export function slugNomeCollaboratore(nome: string) {
+  const slug = nome
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 40);
+  return slug || "collaboratore";
+}
+
+export function pathPortaleCollaboratore(nome: string, token: string) {
+  return `/collab/${slugNomeCollaboratore(nome)}/${token}`;
 }
 
 export function tokenPortaleCondivisibile(token: string | null | undefined) {

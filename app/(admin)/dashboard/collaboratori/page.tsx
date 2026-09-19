@@ -7,6 +7,9 @@ import { NuovoCollaboratoreForm } from "./_components/NuovoCollaboratoreForm";
 import { CollaboratoriLista } from "./_components/CollaboratoriLista";
 import { SetupCollaboratoriNotice } from "./_components/SetupCollaboratoriNotice";
 import { ensureCollaboratoriTokens } from "@/lib/collaboratori/portale";
+import { listContatti } from "@/lib/collaboratori/contattiStore";
+import { demoContattiPer } from "@/lib/collaboratori/demoContatti";
+import { riepilogoContatti } from "@/lib/collaboratori/types";
 
 export const dynamic = "force-dynamic";
 
@@ -78,6 +81,16 @@ export default async function CollaboratoriPage() {
   }
 
   const tokenMap = await ensureCollaboratoriTokens();
+  const contattiEntries = await Promise.all(
+    (collaboratoriRows ?? []).map(async (row) => {
+      try {
+        return [row.id, await listContatti(row.id)] as const;
+      } catch {
+        return [row.id, demoContattiPer(row.id)] as const;
+      }
+    })
+  );
+  const contattiPerCollaboratore = new Map(contattiEntries);
   const missingTables =
     isMissingCollaboratoriTable(collaboratoriError?.message) || isMissingCollaboratoriTable(lavoriError?.message);
   const error = collaboratoriError ?? lavoriError ?? preventiviError;
@@ -124,6 +137,7 @@ export default async function CollaboratoriPage() {
       token: tokenFromRow || stored?.token || null,
       link_attivo: stored?.link_attivo ?? ("link_attivo" in row ? Boolean(row.link_attivo) : true),
       lavori: lavoriPerCollaboratore.get(row.id) ?? [],
+      statsContatti: riepilogoContatti(contattiPerCollaboratore.get(row.id) ?? []),
     };
   });
 

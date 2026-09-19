@@ -8,6 +8,7 @@ import {
   ChevronDown,
   Loader2,
   Percent,
+  Phone,
   Trash2,
   User,
   Users,
@@ -211,6 +212,13 @@ function CollaboratoreCard({
         </div>
 
         <div className="grid grid-cols-2 gap-2">
+          <StatChip icon={Phone} label="Numeri presi" value={`${collaboratore.statsContatti.numeriPresi}`} />
+          <StatChip icon={CheckCircle2} label="Attivi" value={`${collaboratore.statsContatti.attivi}`} />
+          <StatChip icon={Phone} label="Da richiamare" value={`${collaboratore.statsContatti.daRichiamare}`} highlight={collaboratore.statsContatti.daRichiamare > 0} />
+          <StatChip icon={Users} label="Hanno detto no" value={`${collaboratore.statsContatti.hannoDettoNo}`} />
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
           <StatChip icon={CheckCircle2} label="Chiusi" value={`${stats.chiusiCount}`} />
           <StatChip icon={Percent} label="% default" value={`${Number(collaboratore.percentuale)}%`} />
           <StatChip icon={Banknote} label="Dovuto" value={formatEuro(stats.dovuto)} />
@@ -225,6 +233,12 @@ function CollaboratoreCard({
         <div className="flex flex-col gap-2 rounded-xl border border-brand-border bg-brand-surface px-3 py-3">
           <p className="text-xs text-brand-muted">Link personale da mandare a {collaboratore.nome}</p>
           <CopiaLinkPortaleButton token={collaboratore.token} nome={collaboratore.nome} />
+          <a
+            href={`/dashboard/collaboratori/${collaboratore.id}`}
+            className="text-xs font-semibold text-brand-accent-light hover:underline"
+          >
+            Vedi i suoi numeri nel gestionale
+          </a>
         </div>
       </div>
 
