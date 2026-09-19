@@ -133,9 +133,10 @@ export function NotificheCallMattina() {
         <div className="min-w-0 flex-1">
           <h2 className="text-sm font-bold text-brand-text">Notifica delle 7:50</h2>
           <p className="mt-1 text-sm text-brand-muted">
-            Ogni mattina alle 7:50 arrivano le call di oggi. Se un preventivo è stato inviato da
-            7 giorni e non è ancora chiuso, arriva anche il promemoria di ricontattare il cliente.
-            Attivala su questo telefono e su quello del socio. Su iPhone l&apos;app va aggiunta alla Home.
+            Ogni mattina alle 7:50 arrivano le call di oggi e, se un preventivo è aperto da
+            7 giorni, il promemoria di ricontattare il cliente. In Richieste vedi chi e quando
+            chiamare. Attivala su questo telefono e su quello del socio. Su iPhone aggiungi l&apos;app
+            in Home.
           </p>
         </div>
       </div>

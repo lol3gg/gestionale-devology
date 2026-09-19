@@ -144,7 +144,7 @@ export async function inviaProvaNotificaMattina() {
   }
   try {
     const supabase = createClient();
-    const result = await inviaNotificheMattina(supabase, { marcaRichiami: false });
+    const result = await inviaNotificheMattina(supabase);
     if (result.total === 0) {
       return { ok: false as const, error: "Nessun telefono iscritto. Attiva le notifiche su questo dispositivo." };
     }

@@ -11,6 +11,7 @@ import {
 import { STATO_OPTIONS, type StatoRichiesta } from "@/lib/richieste/stato";
 import { DashboardOverview } from "./_components/DashboardOverview";
 import { EliminataToast } from "./_components/EliminataToast";
+import { DaRicontattareServer } from "./_components/DaRicontattareServer";
 import { ProssimeCallServer } from "./_components/ProssimeCallServer";
 import type { RichiestaListItem } from "./_components/RichiesteTable";
 
@@ -105,9 +106,14 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         </p>
       </div>
 
-      <Suspense fallback={<div className="h-28 animate-pulse rounded-brand-lg bg-brand-elevated" />}>
-        <ProssimeCallServer />
-      </Suspense>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Suspense fallback={<div className="h-28 animate-pulse rounded-brand-lg bg-brand-elevated" />}>
+          <ProssimeCallServer />
+        </Suspense>
+        <Suspense fallback={<div className="h-28 animate-pulse rounded-brand-lg bg-brand-elevated" />}>
+          <DaRicontattareServer />
+        </Suspense>
+      </div>
 
       <Suspense fallback={null}>
         <EliminataToast />

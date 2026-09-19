@@ -38,3 +38,16 @@ export function labelRichiamoPreventivo(dataInvio: string, stato: string, oggi =
     testo: manca === 1 ? "Richiamo domani" : `Richiamo tra ${manca} giorni`,
   };
 }
+
+export function etichettaClientePreventivo(row: {
+  nome: string | null;
+  cognome: string | null;
+  azienda: string | null;
+  numero_preventivo?: string | null;
+}) {
+  const persona = `${row.nome ?? ""} ${row.cognome ?? ""}`.trim();
+  if (persona && row.azienda) return `${persona} · ${row.azienda}`;
+  if (persona) return persona;
+  if (row.azienda) return row.azienda;
+  return row.numero_preventivo || "Preventivo";
+}

@@ -41,7 +41,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ ok: true, skipped: true, reason: "Già inviata oggi." });
     }
 
-    const result = await inviaNotificheMattina(supabase, { marcaRichiami: true });
+    const result = await inviaNotificheMattina(supabase);
     await marcaInviataOggi(supabase);
 
     return NextResponse.json({ ok: true, ...result });
